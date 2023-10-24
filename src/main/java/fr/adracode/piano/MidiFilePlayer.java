@@ -62,14 +62,8 @@ public class MidiFilePlayer {
         }
         
         MidiFilePlayer player = new MidiFilePlayer();
-        SignalHandler signalHandler = new SignalHandler() {
-            public void handle(Signal signal){
-                player.stop();
-                System.exit(0);
-            }
-        };
         
-        Signal.handle(new Signal("INT"), signalHandler);
+        Signal.handle(new Signal("INT"), signal -> player.stop());
     
         if(cmd.hasOption("file")){
             new MidiHandler().handle(player::reRun);
@@ -93,6 +87,9 @@ public class MidiFilePlayer {
     
     public void stop(){
         this.stop = true;
+    }
+    
+    public void shutdown(){
         if(sequencer == null){
             return;
         }
@@ -141,9 +138,6 @@ public class MidiFilePlayer {
             sequencer.setTempoFactor(tempoFactor);
             
             do {
-                if(stop){
-                    return;
-                }
                 File currentlyPlaying = playlist.next();
                 
                 sequencer.setSequence(MidiSystem.getSequence(currentlyPlaying));
@@ -169,8 +163,8 @@ public class MidiFilePlayer {
                 }
                 
                 // Fermer le lecteur MIDI et l'envoi MIDI
-            } while(playlist.hasNext());
-            this.stop();
+            } while(playlist.hasNext() && !stop);
+            this.shutdown();
             
         } catch(InvalidMidiDataException | IOException | MidiUnavailableException e){
             e.printStackTrace();
