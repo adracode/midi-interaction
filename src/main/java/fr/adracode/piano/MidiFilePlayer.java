@@ -1,6 +1,8 @@
 package fr.adracode.piano;
 
 import fr.adracode.piano.common.OneTimeStop;
+import fr.adracode.piano.playlist.Playlist;
+import fr.adracode.piano.playlist.PlaylistBuilder;
 import org.apache.commons.cli.*;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
@@ -19,8 +21,8 @@ public class MidiFilePlayer {
         options.addOption(Option.builder()
                 .option("f")
                 .longOpt("file")
-                .hasArg(true)
-                .desc("file to play")
+                .hasArgs()
+                .desc("file(s) to play")
                 .build());
         
         options.addOption(Option.builder()
@@ -71,7 +73,7 @@ public class MidiFilePlayer {
     
         if(cmd.hasOption("file")){
             new MidiHandler().handle(player::reRun);
-            player.readMidiFile(cmd.getOptionValue("file"),
+            player.readMidiFile(cmd.getOptionValues("file"),
                     cmd.hasOption("replay"),
                     cmd.hasOption("start") ? ((Number)(cmd.getParsedOptionValue("start"))).longValue() : 0,
                     cmd.hasOption("tempo") ? ((Number)(cmd.getParsedOptionValue("tempo"))).floatValue() : 1.0F);
@@ -83,6 +85,7 @@ public class MidiFilePlayer {
     private boolean stop = false;
     private Sequencer sequencer;
     private List<MidiDevice> devices = new ArrayList<>();
+    private Playlist playlist;
     
     public void reRun(){
         this.reRun = true;
@@ -100,7 +103,12 @@ public class MidiFilePlayer {
         }
     }
     
-    public void readMidiFile(String file, boolean replay, long start, float tempoFactor){
+    public void readMidiFile(String[] files, boolean replay, long start, float tempoFactor){
+        this.playlist = new PlaylistBuilder()
+                .filenames(files)
+                .loop(replay)
+                .build();
+        
         try {
             Map<String, List<MidiDevice>> midiInterface = getMidiDeviceInterfaces();
             devices.addAll(midiInterface.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
@@ -108,8 +116,6 @@ public class MidiFilePlayer {
             out.open();
             
             //sendMidiEventsFromFile(out.getReceiver(), "setSnow.mid");
-            
-            Sequence sequence = MidiSystem.getSequence(new File(file));
             
             sequencer = MidiSystem.getSequencer(false);
             sequencer.open();
@@ -132,15 +138,19 @@ public class MidiFilePlayer {
                 public void close(){
                 }
             });
-            sequencer.setSequence(sequence);
             sequencer.setTempoFactor(tempoFactor);
+            
             do {
                 if(stop){
                     return;
                 }
+                File currentlyPlaying = playlist.next();
+                
+                sequencer.setSequence(MidiSystem.getSequence(currentlyPlaying));
                 sequencer.start();
                 sequencer.setMicrosecondPosition(start);
-                System.out.println("Lecture en cours... Appuyez sur Entrée pour arrêter / recommencer la lecture ou CTRL-C pour stopper.");
+                System.out.println("Currently playing " + currentlyPlaying.getName() + ", " +
+                        "type Enter to play next music of playlist, or CTRL+C to stop the program.");
                 try(OneTimeStop ignored1 = new OneTimeStop()
                         .setRunningCondition(() -> sequencer.isRunning() && !this.stop && !this.reRun)
                         .setStopOnInteraction(bufferedReader -> {
@@ -159,7 +169,7 @@ public class MidiFilePlayer {
                 }
                 
                 // Fermer le lecteur MIDI et l'envoi MIDI
-            } while(replay);
+            } while(playlist.hasNext());
             this.stop();
             
         } catch(InvalidMidiDataException | IOException | MidiUnavailableException e){
