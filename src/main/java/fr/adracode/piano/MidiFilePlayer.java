@@ -42,13 +42,13 @@ public class MidiFilePlayer {
                 .option("t")
                 .longOpt("tempo")
                 .hasArg(true)
-                .desc("start at microsecond")
+                .desc("change tempo (<1 slower, >1 faster")
                 .type(Number.class)
                 .build());
         
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
-        CommandLine cmd = null;//not a good practice, it serves it purpose
+        CommandLine cmd = null;//not a good practice, it serves its purpose
         
         try {
             cmd = parser.parse(options, args);
@@ -158,7 +158,7 @@ public class MidiFilePlayer {
                     this.reRun = false;
                 }
                 
-                // Fermer le lecteur fr.antoine.piano.MIDI et l'envoi fr.antoine.piano.MIDI
+                // Fermer le lecteur MIDI et l'envoi MIDI
             } while(replay);
             this.stop();
             
