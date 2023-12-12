@@ -5,14 +5,20 @@ import java.util.List;
 import java.util.Map;
 
 public class MidiHandler {
-    
+
+    private final DeviceHandler deviceHandler;
+
+    public MidiHandler(DeviceHandler deviceHandler){
+        this.deviceHandler = deviceHandler;
+    }
+
     public void handle(Runnable onSustain){
-        Map<String, List<MidiDevice>> devices = MidiFilePlayer.getMidiDeviceInterfaces();
+        Map<String, List<MidiDevice>> devices = deviceHandler.getMidiDeviceInterfaces();
         try {
             MidiDevice.Info[] devs = MidiSystem.getMidiDeviceInfo();
             MidiDevice device = devices.get("in").get(0);
             device.open();
-            
+
             Receiver receiver = new Receiver() {
                 public void send(MidiMessage message, long timeStamp){
                     if(message instanceof ShortMessage){
@@ -22,13 +28,13 @@ public class MidiHandler {
                         }
                     }
                 }
-                
+
                 public void close(){
                 }
             };
-            
+
             device.getTransmitter().setReceiver(receiver);
-            
+
         } catch(MidiUnavailableException e){
             System.out.println("Device " + devices + " is not available :(");
             e.printStackTrace();
