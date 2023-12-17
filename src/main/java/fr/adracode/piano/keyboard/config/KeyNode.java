@@ -26,7 +26,7 @@ public class KeyNode<T> {
         return keyNode;
     }
 
-    public Optional<T> getResult(){
+    public Optional<T> getValue(){
         return Optional.empty();
     }
 

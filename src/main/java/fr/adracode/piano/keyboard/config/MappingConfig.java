@@ -70,7 +70,7 @@ public class MappingConfig {
         if(current == null){
             return Optional.empty();
         }
-        Optional<String> result = current.getResult();
+        Optional<String> result = current.getValue();
         if(result.isPresent()){
             current = null;
         }
