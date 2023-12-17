@@ -1,0 +1,77 @@
+single:
+  5:
+    4: A
+    16: E
+    64: S
+    128: I
+    512: T
+    20: O
+    68: D
+    132: C
+    516: M
+    80: B
+    144: G
+    528: H
+    576: Z
+    640: W
+    84: COLON
+    1: NUMPAD0
+    17: NUMPAD1
+    65: NUMPAD2
+    81: NUMPAD3
+    129: NUMPAD4
+    145: NUMPAD5
+    193: NUMPAD6
+    209: NUMPAD7
+    513: NUMPAD8
+    529: NUMPAD9
+    8: 8
+    32: 6
+    256: ADD
+  6:
+    512: SPACE
+    128: N
+    64: R
+    16: U
+    4: L
+    640: P
+    576: V
+    528: Q
+    516: F
+    192: J
+    144: X
+    132: Y
+    68: K
+    20: COMMA
+    704: SEMICOLON
+    8: DEAD_CIRCUMFLEX
+    1: BACK_SPACE
+multi:
+  - trigger:
+      - 6: 256
+      - 5: 16
+    result: "é"
+  - trigger:
+      - 6: 32
+      - 5: 16
+    result: "è"
+  - trigger:
+      - 6: 32
+      - 6: 16
+    result: "ù"
+  - trigger:
+      - 6: 32
+      - 5: 4
+    result: "à"
+  - trigger:
+      - 6: 2
+      - 5: 64
+    result: "$"
+  - trigger:
+      - 6: 2
+      - 5: 16
+    result: "€"
+  - trigger:
+      - 6: 2
+      - 5: 132
+    result: "ç"

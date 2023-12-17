@@ -12,8 +12,15 @@ repositories {
 }
 
 dependencies {
+    implementation group: 'com.spencerwi', name: 'Either.java', version: '2.9.0'
+    implementation group: 'it.unimi.dsi', name: 'fastutil', version: '8.5.12'
+    implementation group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.16.0'
     implementation group: 'org.eclipse.paho', name: 'org.eclipse.paho.client.mqttv3', version: '1.2.5'
     implementation 'commons-cli:commons-cli:1.5.0'
+
+    implementation group: 'net.java.dev.jna', name: 'jna', version: '5.14.0'
+    implementation group: 'net.java.dev.jna', name: 'jna-platform', version: '5.14.0'
+
 }
 
 tasks.withType(JavaCompile).configureEach {

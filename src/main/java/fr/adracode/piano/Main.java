@@ -1,5 +1,6 @@
 package fr.adracode.piano;
 
+import fr.adracode.piano.keyboard.KeyboardSimulator;
 import fr.adracode.piano.mqtt.MqttPublisher;
 import fr.adracode.piano.mqtt.MqttSubscriber;
 import fr.adracode.piano.mqtt.MqttTopicPublisher;
@@ -13,7 +14,7 @@ import java.io.IOException;
 
 public class Main {
 
-    public static void main(String[] args) throws ParseException, MqttException, AWTException{
+    public static void main(String[] args) throws ParseException, MqttException, AWTException, IOException{
         Options options = new Options();
 
         options.addOption(Option.builder()
@@ -68,6 +69,11 @@ public class Main {
         options.addOption(Option.builder()
                 .longOpt("simulate-keyboard")
                 .desc("simulate keyboard press")
+                .build());
+
+        options.addOption(Option.builder()
+                .longOpt("mapping")
+                .desc("mapping for keyboard simulation")
                 .build());
 
         CommandLineParser parser = new DefaultParser();
@@ -126,7 +132,7 @@ public class Main {
                     cmd.getOptionValue("hostname"),
                     ((Number)cmd.getParsedOptionValue("port")).intValue(),
                     "piano/keyboard",
-                    new KeyboardSimulator()
+                    new KeyboardSimulator("mapping.yml")
             );
             Signal.handle(new Signal("INT"), signal -> {
                 try {
