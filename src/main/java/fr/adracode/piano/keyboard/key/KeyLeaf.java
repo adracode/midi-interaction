@@ -1,4 +1,4 @@
-package fr.adracode.piano.keyboard.config;
+package fr.adracode.piano.keyboard.key;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -7,8 +7,8 @@ public class KeyLeaf<T> extends KeyNode<T> {
 
     private final T value;
 
-    public KeyLeaf(int octave, int tone, T value){
-        super(octave, tone);
+    public KeyLeaf(long key, T value){
+        super(key);
         this.value = value;
     }
 

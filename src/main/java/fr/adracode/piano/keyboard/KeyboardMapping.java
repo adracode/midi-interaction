@@ -2,6 +2,8 @@ package fr.adracode.piano.keyboard;
 
 import com.spencerwi.either.Either;
 import fr.adracode.piano.keyboard.config.MappingConfig;
+import fr.adracode.piano.keyboard.key.KeyAction;
+import fr.adracode.piano.keyboard.key.ToggledKey;
 import org.apache.commons.cli.ParseException;
 
 import java.util.Optional;
@@ -13,13 +15,15 @@ public class KeyboardMapping {
 
     private final MappingConfig mapping;
     private final int[] hand = new int[OCTAVE];
+    private long currentOnceToggledKeys;
 
     public KeyboardMapping(String mappingFile) throws ParseException{
         mapping = new MappingConfig(mappingFile);
     }
 
-    public Either<Integer, String> getKey(int data){
+    public void registerKey(int data){
         int octave = data / TONE;
+        //TODO: simplify (TONE - (data - octave * TONE) ...)
         hand[octave] |= switch(data - octave * TONE){
             case 0 -> 0b100000000000;
             case 1 -> 0b010000000000;
@@ -35,16 +39,32 @@ public class KeyboardMapping {
             case 11 -> 0b000000000001;
             default -> 0;
         };
-        return Either.either(
-                () -> mapping.getSingle(octave, hand[octave]).orElse(null),
-                () -> mapping.getMulti(octave, hand[octave]).orElse(null));
+    }
+
+    public void toggle(ToggledKey toggledKey){
+        mapping.toggle(toggledKey);
+    }
+
+    public void toggleOnce(ToggledKey key){
+        currentOnceToggledKeys = ToggledKey.toggle(currentOnceToggledKeys, key);
     }
 
     public void reset(int index){
         hand[index] = 0;
     }
 
-    public Optional<Integer> getCurrentKey(int index){
-        return mapping.getSingle(index, hand[index]);
+    public Optional<Either<Integer, KeyAction>> getCurrentKey(int index){
+        System.out.println(hand[index]);
+        Either<Integer, KeyAction> result = Either.either(
+                () -> mapping.getSingle(index, hand[index]).orElse(null),
+                () -> mapping.getMulti(index, hand[index]).orElse(null));
+        Optional<Either<Integer, KeyAction>> optionalResult = result.isLeft() && result.getLeft() == null || result.isRight() && result.getRight() == null ?
+                Optional.empty() :
+                Optional.of(result);
+        //Reset once-toggles only if there is no toggle key
+        if(optionalResult.map(o -> o.isRight() && o.getRight().getResult().isEmpty()).orElse(true)){
+            currentOnceToggledKeys = 0;
+        }
+        return optionalResult;
     }
 }

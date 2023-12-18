@@ -1,6 +1,6 @@
 package fr.adracode.piano.keyboard;
 
-import com.spencerwi.either.Either;
+import fr.adracode.piano.keyboard.key.KeyAction;
 import org.apache.commons.cli.ParseException;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -17,18 +17,15 @@ import static fr.adracode.piano.keyboard.KeyboardMapping.TONE;
 public class KeyboardSimulator implements MqttCallback {
 
     private static final int TIMEOUT = 50; //ms
-    private static final boolean ALT_KEY_MODE = false;
-
     private final Robot robot = new Robot();
     private final ScheduledExecutorService timer = Executors.newScheduledThreadPool(1);
-
+    private final UnicodeKeyboard unicodeKeyboard = new UnicodeKeyboard();
     private final KeyboardMapping mapping;
+
     private boolean caps;
     private final boolean[] octaveEngaged = new boolean[OCTAVE];
-
     private ScheduledFuture<?> timerTask;
     private int lastKey;
-    private final UnicodeKeyboard unicodeKeyboard = new UnicodeKeyboard();
 
     public KeyboardSimulator(String mappingFileName) throws AWTException, ParseException{
         mapping = new KeyboardMapping(mappingFileName);
@@ -72,22 +69,32 @@ public class KeyboardSimulator implements MqttCallback {
 
     private void handleKeyPressed(int data1, int data2){
         int octave = data1 / TONE;
-        Either<Integer, String> key = mapping.getKey(data1);
+        mapping.registerKey(data1);
         if(data2 >= 100){
 //            caps = true;
         }
-        if(key.isLeft()){
-            if(!octaveEngaged[octave] && !isSustain()){
-                octaveEngaged[octave] = true;
-                CompletableFuture.delayedExecutor(TIMEOUT, TimeUnit.MILLISECONDS)
-                        .execute(() -> {
-                            lastKey = mapping.getCurrentKey(octave).orElse(-1);
-                            operateKeyboard(lastKey, caps);
+        if(!octaveEngaged[octave]/* && !isSustain()*/){
+            octaveEngaged[octave] = true;
+            //TODO: Si dans single, NE PEUT PAS être un premier trigger
+            //TODO: boutons toggle exclusifs à ça
+            CompletableFuture.delayedExecutor(TIMEOUT, TimeUnit.MILLISECONDS)
+                    .execute(() -> {
+                        synchronized(this){
+                            mapping.getCurrentKey(octave).ifPresent(key -> {
+                                if(key.isLeft()){
+                                    operateKeyboard(key.getLeft(), caps);
+                                } else if(key.isRight()){
+                                    KeyAction action = key.getRight();
+                                    action.getToggle().ifPresent(mapping::toggle);
+                                    action.getResult().ifPresent(r -> r.run(
+                                            keyCode -> operateKeyboard(keyCode, caps),
+                                            this::operateKeyboard
+                                    ));
+                                }
+                            });
                             reset(octave);
-                        });
-            }
-        } else if(key.isRight()){
-            operateKeyboard(key.getRight());
+                        }
+                    });
         }
     }
 
@@ -95,7 +102,6 @@ public class KeyboardSimulator implements MqttCallback {
     private boolean isSustain(){
         return timerTask != null && !timerTask.isCancelled();
     }
-
 
     @Override
     public void deliveryComplete(IMqttDeliveryToken token){

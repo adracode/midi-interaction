@@ -1,4 +1,4 @@
-package fr.adracode.piano.keyboard.config;
+package fr.adracode.piano.keyboard.key;
 
 public record Key(int octave, int tone) {
 
