@@ -1,7 +1,7 @@
 package fr.adracode.piano.keyboard;
 
 import com.spencerwi.either.Either;
-import fr.adracode.piano.keyboard.config.MappingConfig;
+import fr.adracode.piano.keyboard.config.Mapping;
 import fr.adracode.piano.keyboard.key.KeyAction;
 import fr.adracode.piano.keyboard.key.ToggledKey;
 import org.apache.commons.cli.ParseException;
@@ -13,12 +13,12 @@ public class KeyboardMapping {
     public static final int OCTAVE = 11;
     public static final int TONE = 12;
 
-    private final MappingConfig mapping;
+    private final Mapping mapping;
     private final int[] hand = new int[OCTAVE];
     private long currentOnceToggledKeys;
 
-    public KeyboardMapping(String mappingFile) throws ParseException{
-        mapping = new MappingConfig(mappingFile);
+    public KeyboardMapping(Mapping mappingConfig) throws ParseException{
+        this.mapping = mappingConfig;
     }
 
     public void registerKey(int data){
@@ -39,10 +39,6 @@ public class KeyboardMapping {
             case 11 -> 0b000000000001;
             default -> 0;
         };
-    }
-
-    public boolean toggle(ToggledKey toggledKey){
-        return mapping.toggle(toggledKey);
     }
 
     public void toggleOnce(ToggledKey key){

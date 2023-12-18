@@ -1,5 +1,6 @@
 package fr.adracode.piano.keyboard;
 
+import fr.adracode.piano.keyboard.config.Mapping;
 import fr.adracode.piano.keyboard.key.KeyAction;
 import fr.adracode.piano.keyboard.key.ToggledKey;
 import org.apache.commons.cli.ParseException;
@@ -9,7 +10,6 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import javax.sound.midi.ShortMessage;
 import java.awt.*;
-import java.awt.event.KeyEvent;
 import java.util.concurrent.*;
 
 import static fr.adracode.piano.keyboard.KeyboardMapping.OCTAVE;
@@ -21,15 +21,16 @@ public class KeyboardSimulator implements MqttCallback {
     private final Robot robot = new Robot();
     private final ScheduledExecutorService timer = Executors.newScheduledThreadPool(1);
     private final UnicodeKeyboard unicodeKeyboard = new UnicodeKeyboard();
-    private final KeyboardMapping mapping;
+    private final Mapping mapping;
+    private final KeyboardMapping keyboardMapping;
 
-    private boolean caps;
     private final boolean[] octaveEngaged = new boolean[OCTAVE];
     private ScheduledFuture<?> timerTask;
     private int lastKey;
 
     public KeyboardSimulator(String mappingFileName) throws AWTException, ParseException{
-        mapping = new KeyboardMapping(mappingFileName);
+        mapping = new Mapping(mappingFileName);
+        keyboardMapping = new KeyboardMapping(mapping);
     }
 
     @Override
@@ -60,7 +61,7 @@ public class KeyboardSimulator implements MqttCallback {
                     } else if(isSustain()){
                         timerTask.cancel(true);
                         for(int octave = 0; octave < OCTAVE; ++octave){
-                            mapping.reset(octave);
+                            keyboardMapping.reset(octave);
                         }
                     }
                 }
@@ -70,8 +71,8 @@ public class KeyboardSimulator implements MqttCallback {
 
     private void handleKeyPressed(int data1, int data2){
         int octave = data1 / TONE;
-        mapping.registerKey(data1);
-        if(data2 >= 100){
+        keyboardMapping.registerKey(data1);
+        if(data2 >= 80){
 //            caps = true;
         }
         if(!octaveEngaged[octave]/* && !isSustain()*/){
@@ -81,7 +82,7 @@ public class KeyboardSimulator implements MqttCallback {
             CompletableFuture.delayedExecutor(TIMEOUT, TimeUnit.MILLISECONDS)
                     .execute(() -> {
                         synchronized(this){
-                            mapping.getCurrentKey(octave).ifPresent(key -> {
+                            keyboardMapping.getCurrentKey(octave).ifPresent(key -> {
                                 if(key.isLeft()){
                                     operateKeyboard(key.getLeft());
                                 } else if(key.isRight()){
@@ -133,7 +134,7 @@ public class KeyboardSimulator implements MqttCallback {
 
     private void reset(int octave){
         octaveEngaged[octave] = false;
-        mapping.reset(octave);
+        keyboardMapping.reset(octave);
     }
 
     private void resetAll(){

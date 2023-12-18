@@ -18,7 +18,7 @@ import java.util.function.Function;
 
 import static fr.adracode.piano.keyboard.KeyboardMapping.OCTAVE;
 
-public class MappingConfig {
+public class Mapping {
 
     private final Long2IntMap singleMapping = new Long2IntArrayMap();
     private final Long2ObjectMap<KeyNode<KeyAction>> multiRoot = new Long2ObjectArrayMap<>();
@@ -26,7 +26,7 @@ public class MappingConfig {
     private KeyNode<KeyAction> current;
     private long currentToggledKeys;
 
-    public MappingConfig(String mappingFile) throws ParseException{
+    public Mapping(String mappingFile) throws ParseException{
         try {
             File f = new File(mappingFile);
             RawMappingConfig rawMapping = new YAMLMapper()
