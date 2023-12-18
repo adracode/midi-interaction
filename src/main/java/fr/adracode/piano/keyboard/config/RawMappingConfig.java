@@ -19,5 +19,5 @@ public record RawMappingConfig(
             List<Map<String, String>> trigger,
             String result,
             List<String> with,
-            Integer keyCode) { }
+            String key) { }
 }

@@ -1,6 +1,5 @@
 package fr.adracode.piano.keyboard.key;
 
-import java.awt.event.KeyEvent;
 import java.util.*;
 
 public class ToggledKey {
@@ -67,11 +66,8 @@ public class ToggledKey {
         }
         return Optional.ofNullable(universe.get(label))
                 .orElseGet(() -> {
-                    int keyCode = 0;
-                    try {
-                        keyCode = (int)KeyEvent.class.getField("VK_" + label).get(null);
-                    } catch(IllegalAccessException | NoSuchFieldException ignored){ }
-                    ToggledKey newKey = new ToggledKey(label, keyCode);
+                    ;
+                    ToggledKey newKey = new ToggledKey(label, Key.getKeyCode(label).orElse(0));
                     universe.put(label, newKey);
                     universeById.add(newKey);
                     return newKey;

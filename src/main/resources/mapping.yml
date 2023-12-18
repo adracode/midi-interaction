@@ -1,5 +1,10 @@
+settings:
+  key-interval: 50 #ms
+  toggle-once-below: 80 #intensity
+  sustain-repeat: 25 #ms
+
 single:
-  5:
+  4:
     4: A
     16: E
     64: S
@@ -25,10 +30,9 @@ single:
     209: NUMPAD7
     513: NUMPAD8
     529: NUMPAD9
-    8: 8
-    32: 6
-    256: ADD
-  6:
+    2049: ESCAPE
+    2048: TAB
+  5:
     512: SPACE
     128: N
     64: R
@@ -46,34 +50,101 @@ single:
     704: SEMICOLON
     8: DEAD_CIRCUMFLEX
     1: BACK_SPACE
+    2049: ENTER
+
 toggles:
   - trigger:
-      6: 2048
+      4: 256
     result: PUNCTUATION
   - trigger:
-      5: 32
+      4: 32
     result: CONTROL
   - trigger:
-      5: 8
+      4: 8
     result: SHIFT
+  - trigger:
+      4: 1024
+    result: ALT
 multi:
-  - trigger: [6: 256, 5: 16]
+  - trigger: [ 5: 256, 4: 16 ]
     result: "é"
-  - trigger: [6: 256, 5: 16]
+  - trigger: [ 5: 256, 4: 16 ]
     with: SHIFT
     result: "É"
-  - trigger: [6: 32, 5: 16]
+  - trigger: [ 5: 32, 4: 16 ]
     result: "è"
-  - trigger: [6: 32, - 6: 16]
+  - trigger: [ 5: 32, 5: 16 ]
     result: "ù"
-  - trigger: [6: 32, - 5: 4]
+  - trigger: [ 5: 32, 4: 4 ]
     result: "à"
-  - trigger: [6: 2, - 5: 64]
+  - trigger: [ 5: 2, 4: 64 ]
     result: "$"
-  - trigger: [6: 2, - 5: 16]
+  - trigger: [ 5: 2, 4: 16 ]
     result: "€"
-  - trigger: [6: 2, - 5: 132]
+  - trigger: [ 5: 2, 4: 132 ]
     result: "ç"
-  - trigger: [6: 128]
+  - trigger: [ 4: 532 ]
+    key: 6
+  - trigger: [ 4: 580 ]
+    key: MULTIPLY
+  - trigger: [ 5: 64 ]
     with: PUNCTUATION
-    result: "("
+    key: 5
+  - trigger: [ 5: 16 ]
+    with: PUNCTUATION
+    result: "["
+  - trigger: [ 5: 4 ]
+    with: PUNCTUATION
+    result: "{"
+  - trigger: [ 5: 576 ]
+    with: PUNCTUATION
+    result: ")"
+  - trigger: [ 5: 528 ]
+    with: PUNCTUATION
+    result: "]"
+  - trigger: [ 5: 516 ]
+    with: PUNCTUATION
+    result: "}"
+  - trigger: [ 5: 640 ]
+    with: PUNCTUATION
+    result: "\""
+  - trigger: [ 5: 192 ]
+    with: PUNCTUATION
+    result: "'"
+  - trigger: [ 5: 80 ]
+    with: PUNCTUATION
+    result: "."
+  - trigger: [ 5: 592 ]
+    with: PUNCTUATION
+    result: "?"
+  - trigger: [ 5: 208 ]
+    with: PUNCTUATION
+    result: "!"
+  - trigger: [ 5: 144 ]
+    with: PUNCTUATION
+    result: "<"
+  - trigger: [ 5: 132 ]
+    with: PUNCTUATION
+    result: ">"
+  - trigger: [ 5: 644 ]
+    key: DIVIDE
+  - trigger: [ 4: 644 ]
+    key: ADD
+  - trigger: [ 5: 580 ]
+    key: EQUALS
+  - trigger: [ 5: 532 ]
+    result: "%"
+  - trigger: [ 5: 208 ]
+    result: "#"
+  - trigger: [ 4: 208 ]
+    result: "|"
+  - trigger: [ 4: 148 ]
+    result: "&"
+  - trigger: [ 4: 656 ]
+    result: "@"
+  - trigger: [ 5: 656 ]
+    result: "°"
+  - trigger: [ 4: 196 ]
+    key: 8
+  - trigger: [ 4: 704 ]
+    result: "~"

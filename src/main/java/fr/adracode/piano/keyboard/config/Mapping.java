@@ -10,7 +10,6 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectArrayMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import org.apache.commons.cli.ParseException;
 
-import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -46,7 +45,7 @@ public class Mapping {
                 }
                 for(var toneMapping : octaveMapping.getValue().entrySet()){
                     int tone = Integer.parseInt(toneMapping.getKey());
-                    singleMapping.put(Key.from(octave, tone), (int)KeyEvent.class.getField("VK_" + toneMapping.getValue()).get(null));
+                    singleMapping.put(Key.from(octave, tone), Key.getKeyCode(toneMapping.getValue()).orElse(0).intValue());
                 }
             }
 
@@ -66,11 +65,9 @@ public class Mapping {
                             return newTree;
                         });
 
-                buildTree(multi, node, m -> new KeyAction.Builder().result(m.result()).keyCode(m.keyCode()));
+                buildTree(multi, node, m -> new KeyAction.Builder().result(m.result()).keyCode(Key.getKeyCode(m.key()).orElse(null)));
             }
-            System.out.println(multiRoot);
-
-        } catch(NumberFormatException | IOException | NoSuchFieldException | IllegalAccessException e){
+        } catch(NumberFormatException | IOException e){
             throw new ParseException("Couldn't parse mapping file: " + e);
         }
     }
