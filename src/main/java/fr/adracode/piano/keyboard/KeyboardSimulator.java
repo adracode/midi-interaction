@@ -1,6 +1,7 @@
 package fr.adracode.piano.keyboard;
 
 import fr.adracode.piano.keyboard.key.KeyAction;
+import fr.adracode.piano.keyboard.key.ToggledKey;
 import org.apache.commons.cli.ParseException;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -53,7 +54,7 @@ public class KeyboardSimulator implements MqttCallback {
                     if(data2 != 0 && !isSustain()){
                         timerTask = timer.scheduleAtFixedRate(() -> {
                             for(int octave = 0; octave < OCTAVE; ++octave){
-                                operateKeyboard(lastKey, caps);
+                                operateKeyboard(lastKey);
                             }
                         }, 0, TIMEOUT / 2, TimeUnit.MILLISECONDS);
                     } else if(isSustain()){
@@ -82,12 +83,12 @@ public class KeyboardSimulator implements MqttCallback {
                         synchronized(this){
                             mapping.getCurrentKey(octave).ifPresent(key -> {
                                 if(key.isLeft()){
-                                    operateKeyboard(key.getLeft(), caps);
+                                    operateKeyboard(key.getLeft());
                                 } else if(key.isRight()){
                                     KeyAction action = key.getRight();
-                                    action.getToggle().ifPresent(mapping::toggle);
+                                    action.getToggle().ifPresent(this::toggle);
                                     action.getResult().ifPresent(r -> r.run(
-                                            keyCode -> operateKeyboard(keyCode, caps),
+                                            this::operateKeyboard,
                                             this::operateKeyboard
                                     ));
                                 }
@@ -107,6 +108,10 @@ public class KeyboardSimulator implements MqttCallback {
     public void deliveryComplete(IMqttDeliveryToken token){
     }
 
+    public void toggle(ToggledKey key){
+        key.getKeyCode().ifPresent(mapping.toggle(key) ? robot::keyPress : robot::keyRelease);
+    }
+
     public void operateKeyboard(String str){
         for(int i = 0; i < str.length(); ++i){
             unicodeKeyboard.sendUnicode(str.codePointAt(i));
@@ -114,21 +119,15 @@ public class KeyboardSimulator implements MqttCallback {
         resetAll();
     }
 
-    public void operateKeyboard(int charCode, boolean shift){
+    public void operateKeyboard(int charCode){
         if(charCode <= 0){
             return;
-        }
-        if(shift){
-            robot.keyPress(KeyEvent.VK_SHIFT);
         }
         try {
             robot.keyPress(charCode);
             robot.keyRelease(charCode);
         } catch(IllegalArgumentException e){
             e.printStackTrace();
-        }
-        if(shift){
-            robot.keyRelease(KeyEvent.VK_SHIFT);
         }
     }
 

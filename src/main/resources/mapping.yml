@@ -46,6 +46,16 @@ single:
     704: SEMICOLON
     8: DEAD_CIRCUMFLEX
     1: BACK_SPACE
+toggles:
+  - trigger:
+      6: 2048
+    result: PUNCTUATION
+  - trigger:
+      5: 32
+    result: CONTROL
+  - trigger:
+      5: 8
+    result: SHIFT
 multi:
   - trigger:
       - 6: 256

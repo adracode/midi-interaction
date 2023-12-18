@@ -41,8 +41,8 @@ public class KeyboardMapping {
         };
     }
 
-    public void toggle(ToggledKey toggledKey){
-        mapping.toggle(toggledKey);
+    public boolean toggle(ToggledKey toggledKey){
+        return mapping.toggle(toggledKey);
     }
 
     public void toggleOnce(ToggledKey key){

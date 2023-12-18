@@ -1,9 +1,7 @@
 package fr.adracode.piano.keyboard.key;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.awt.event.KeyEvent;
+import java.util.*;
 
 public class ToggledKey {
     private static final ToggledKey[] EMPTY = new ToggledKey[0];
@@ -14,17 +12,23 @@ public class ToggledKey {
 
     private final String label;
     private final long id;
+    private int keyCode;
 
-    public ToggledKey(String label){
+    public ToggledKey(String label, int keyCode){
         if(ID == 63){
             throw new IllegalStateException("Toggled keys are limited to 64");
         }
         this.label = label;
+        this.keyCode = keyCode;
         this.id = (long)Math.pow(2, ID++);
     }
 
     public long getId(){
         return id;
+    }
+
+    public OptionalInt getKeyCode(){
+        return keyCode == 0 ? OptionalInt.empty() : OptionalInt.of(keyCode);
     }
 
     public static long of(Collection<ToggledKey> keys){
@@ -40,12 +44,16 @@ public class ToggledKey {
     }
 
     public static long toggle(long toggled, ToggledKey key){
-        if((toggled & key.getId()) == 0){
-            toggled |= key.getId();
-        } else {
+        if(isToggleOn(toggled, key)){
             toggled &= ~key.getId();
+        } else {
+            toggled |= key.getId();
         }
         return toggled;
+    }
+
+    public static boolean isToggleOn(long toggled, ToggledKey key){
+        return (toggled & key.getId()) != 0;
     }
 
     public static ToggledKey get(String label){
@@ -54,7 +62,11 @@ public class ToggledKey {
         }
         return Optional.ofNullable(universe.get(label))
                 .orElseGet(() -> {
-                    ToggledKey newKey = new ToggledKey(label);
+                    int keyCode = 0;
+                    try {
+                        keyCode = (int)KeyEvent.class.getField("VK_" + label).get(null);
+                    } catch(IllegalAccessException | NoSuchFieldException ignored){ }
+                    ToggledKey newKey = new ToggledKey(label, keyCode);
                     universe.put(label, newKey);
                     return newKey;
                 });

@@ -89,8 +89,9 @@ public class MappingConfig {
         }
     }
 
-    public void toggle(ToggledKey key){
+    public boolean toggle(ToggledKey key){
         currentToggledKeys = ToggledKey.toggle(currentToggledKeys, key);
+        return ToggledKey.isToggleOn(currentToggledKeys, key);
     }
 
     private KeyNode<KeyAction> getTree(){
@@ -102,6 +103,7 @@ public class MappingConfig {
         return key == 0 ? Optional.empty() : Optional.of(key);
     }
 
+    //TODO: simplify
     public Optional<KeyAction> getMulti(int octave, int tone){
         long key = Key.from(octave, tone);
         KeyNode<KeyAction> toggle = (current == null ? toggles : current).get(key).orElse(null);
