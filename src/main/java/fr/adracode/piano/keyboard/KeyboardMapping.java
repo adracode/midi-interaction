@@ -3,8 +3,6 @@ package fr.adracode.piano.keyboard;
 import com.spencerwi.either.Either;
 import fr.adracode.piano.keyboard.config.Mapping;
 import fr.adracode.piano.keyboard.key.KeyAction;
-import fr.adracode.piano.keyboard.key.ToggledKey;
-import org.apache.commons.cli.ParseException;
 
 import java.util.Optional;
 
@@ -15,9 +13,8 @@ public class KeyboardMapping {
 
     private final Mapping mapping;
     private final int[] hand = new int[OCTAVE];
-    private long currentOnceToggledKeys;
 
-    public KeyboardMapping(Mapping mappingConfig) throws ParseException{
+    public KeyboardMapping(Mapping mappingConfig){
         this.mapping = mappingConfig;
     }
 
@@ -41,10 +38,6 @@ public class KeyboardMapping {
         };
     }
 
-    public void toggleOnce(ToggledKey key){
-        currentOnceToggledKeys = ToggledKey.toggle(currentOnceToggledKeys, key);
-    }
-
     public void reset(int index){
         hand[index] = 0;
     }
@@ -57,10 +50,7 @@ public class KeyboardMapping {
         Optional<Either<Integer, KeyAction>> optionalResult = result.isLeft() && result.getLeft() == null || result.isRight() && result.getRight() == null ?
                 Optional.empty() :
                 Optional.of(result);
-        //Reset once-toggles only if there is no toggle key
-        if(optionalResult.map(o -> o.isRight() && o.getRight().getResult().isEmpty()).orElse(true)){
-            currentOnceToggledKeys = 0;
-        }
+
         return optionalResult;
     }
 }

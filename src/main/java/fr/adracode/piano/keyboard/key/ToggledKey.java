@@ -7,12 +7,13 @@ public class ToggledKey {
     private static final ToggledKey[] EMPTY = new ToggledKey[0];
 
     private static final Map<String, ToggledKey> universe = new HashMap<>();
+    private static final List<ToggledKey> universeById = new ArrayList<>();
 
     private static byte ID = 0;
 
     private final String label;
     private final long id;
-    private int keyCode;
+    private final int keyCode;
 
     public ToggledKey(String label, int keyCode){
         if(ID == 63){
@@ -20,6 +21,7 @@ public class ToggledKey {
         }
         this.label = label;
         this.keyCode = keyCode;
+        //TODO: optimize
         this.id = (long)Math.pow(2, ID++);
     }
 
@@ -29,6 +31,14 @@ public class ToggledKey {
 
     public OptionalInt getKeyCode(){
         return keyCode == 0 ? OptionalInt.empty() : OptionalInt.of(keyCode);
+    }
+
+    public String getLabel(){
+        return label;
+    }
+
+    public static byte getNextId(){
+        return ID;
     }
 
     public static long of(Collection<ToggledKey> keys){
@@ -43,17 +53,12 @@ public class ToggledKey {
         return key;
     }
 
-    public static long toggle(long toggled, ToggledKey key){
-        if(isToggleOn(toggled, key)){
-            toggled &= ~key.getId();
-        } else {
-            toggled |= key.getId();
-        }
-        return toggled;
+    public static long toggle(long toggled, long keyId){
+        return toggled ^ keyId;
     }
 
-    public static boolean isToggleOn(long toggled, ToggledKey key){
-        return (toggled & key.getId()) != 0;
+    public static boolean isToggleOn(long toggled, long keyId){
+        return (toggled & keyId) != 0;
     }
 
     public static ToggledKey get(String label){
@@ -68,14 +73,21 @@ public class ToggledKey {
                     } catch(IllegalAccessException | NoSuchFieldException ignored){ }
                     ToggledKey newKey = new ToggledKey(label, keyCode);
                     universe.put(label, newKey);
+                    universeById.add(newKey);
                     return newKey;
                 });
     }
 
+    public static ToggledKey get(long id){
+        return universeById.get(Long.numberOfTrailingZeros(id));
+    }
+
     @Override
     public boolean equals(Object o){
-        if(this == o) return true;
-        if(!(o instanceof ToggledKey that)) return false;
+        if(this == o)
+            return true;
+        if(!(o instanceof ToggledKey that))
+            return false;
         return id == that.id;
     }
 

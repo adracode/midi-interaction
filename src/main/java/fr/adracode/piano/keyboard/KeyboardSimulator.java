@@ -11,13 +11,13 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import javax.sound.midi.ShortMessage;
 import java.awt.*;
 import java.util.concurrent.*;
+import java.util.stream.LongStream;
 
 import static fr.adracode.piano.keyboard.KeyboardMapping.OCTAVE;
 import static fr.adracode.piano.keyboard.KeyboardMapping.TONE;
 
 public class KeyboardSimulator implements MqttCallback {
 
-    private static final int TIMEOUT = 50; //ms
     private final Robot robot = new Robot();
     private final ScheduledExecutorService timer = Executors.newScheduledThreadPool(1);
     private final UnicodeKeyboard unicodeKeyboard = new UnicodeKeyboard();
@@ -27,6 +27,8 @@ public class KeyboardSimulator implements MqttCallback {
     private final boolean[] octaveEngaged = new boolean[OCTAVE];
     private ScheduledFuture<?> timerTask;
     private int lastKey;
+    private boolean togglePermanently;
+    private long currentOnceToggledKeys;
 
     public KeyboardSimulator(String mappingFileName) throws AWTException, ParseException{
         mapping = new Mapping(mappingFileName);
@@ -57,7 +59,7 @@ public class KeyboardSimulator implements MqttCallback {
                             for(int octave = 0; octave < OCTAVE; ++octave){
                                 operateKeyboard(lastKey);
                             }
-                        }, 0, TIMEOUT / 2, TimeUnit.MILLISECONDS);
+                        }, 0, mapping.getSettings().sustainRepeat(), TimeUnit.MILLISECONDS);
                     } else if(isSustain()){
                         timerTask.cancel(true);
                         for(int octave = 0; octave < OCTAVE; ++octave){
@@ -72,17 +74,18 @@ public class KeyboardSimulator implements MqttCallback {
     private void handleKeyPressed(int data1, int data2){
         int octave = data1 / TONE;
         keyboardMapping.registerKey(data1);
-        if(data2 >= 80){
-//            caps = true;
+        if(data2 >= mapping.getSettings().toggleOnceBelow()){
+            togglePermanently = true;
         }
         if(!octaveEngaged[octave]/* && !isSustain()*/){
             octaveEngaged[octave] = true;
             //TODO: Si dans single, NE PEUT PAS être un premier trigger
             //TODO: boutons toggle exclusifs à ça
-            CompletableFuture.delayedExecutor(TIMEOUT, TimeUnit.MILLISECONDS)
+            CompletableFuture.delayedExecutor(mapping.getSettings().keyInterval(), TimeUnit.MILLISECONDS)
                     .execute(() -> {
                         synchronized(this){
-                            keyboardMapping.getCurrentKey(octave).ifPresent(key -> {
+                            var currentKey = keyboardMapping.getCurrentKey(octave);
+                            currentKey.ifPresent(key -> {
                                 if(key.isLeft()){
                                     operateKeyboard(key.getLeft());
                                 } else if(key.isRight()){
@@ -95,6 +98,21 @@ public class KeyboardSimulator implements MqttCallback {
                                 }
                             });
                             reset(octave);
+                            togglePermanently = false;
+
+                            //Reset once-toggles only if there is no toggle key
+                            if(currentKey.map(o -> o.isLeft() || o.isRight() && o.getRight().getToggle().isEmpty()).orElse(true)){
+                                long toggled = mapping.getCurrentToggledKeys();
+                                LongStream.range(0, ToggledKey.getNextId()).forEach(i -> {
+                                    long it = (long)Math.pow(2, i);
+                                    if((it & currentOnceToggledKeys) != 0){
+                                        ToggledKey.get(it).getKeyCode().ifPresent((toggled & it) == 0 ? robot::keyPress : robot::keyRelease);
+                                    }
+                                });
+                                mapping.toggle(currentOnceToggledKeys);
+
+                                currentOnceToggledKeys = 0;
+                            }
                         }
                     });
         }
@@ -110,7 +128,14 @@ public class KeyboardSimulator implements MqttCallback {
     }
 
     public void toggle(ToggledKey key){
-        key.getKeyCode().ifPresent(mapping.toggle(key) ? robot::keyPress : robot::keyRelease);
+        if(mapping.toggle(key.getId())){
+            key.getKeyCode().ifPresent(robot::keyPress);
+        } else {
+            key.getKeyCode().ifPresent(robot::keyRelease);
+        }
+        if(!togglePermanently){
+            currentOnceToggledKeys = ToggledKey.toggle(currentOnceToggledKeys, key.getId());
+        }
     }
 
     public void operateKeyboard(String str){

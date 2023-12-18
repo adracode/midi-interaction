@@ -1,6 +1,7 @@
 package fr.adracode.piano.keyboard.config;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import fr.adracode.piano.keyboard.key.*;
 import it.unimi.dsi.fastutil.longs.Long2IntArrayMap;
@@ -20,6 +21,7 @@ import static fr.adracode.piano.keyboard.KeyboardMapping.OCTAVE;
 
 public class Mapping {
 
+    private final KeyboardSettings settings;
     private final Long2IntMap singleMapping = new Long2IntArrayMap();
     private final Long2ObjectMap<KeyNode<KeyAction>> multiRoot = new Long2ObjectArrayMap<>();
     private final KeyNode<KeyAction> toggles = new KeyNode<>(0);
@@ -31,8 +33,11 @@ public class Mapping {
             File f = new File(mappingFile);
             RawMappingConfig rawMapping = new YAMLMapper()
                     .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+                    .setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
                     .readValue(f, RawMappingConfig.class);
             multiRoot.put(0, new KeyNode<>(0));
+
+            settings = KeyboardSettings.fromRaw(rawMapping.settings());
 
             for(var octaveMapping : rawMapping.single().entrySet()){
                 int octave = Integer.parseInt(octaveMapping.getKey());
@@ -70,6 +75,10 @@ public class Mapping {
         }
     }
 
+    public KeyboardSettings getSettings(){
+        return settings;
+    }
+
     private void buildTree(RawMappingConfig.MultiKey multi, KeyNode<KeyAction> node, Function<RawMappingConfig.MultiKey, KeyAction.Builder> buildChild){
         var trigger = multi.trigger();
         for(int i = 0; i < trigger.size(); i++){
@@ -89,9 +98,13 @@ public class Mapping {
         }
     }
 
-    public boolean toggle(ToggledKey key){
-        currentToggledKeys = ToggledKey.toggle(currentToggledKeys, key);
-        return ToggledKey.isToggleOn(currentToggledKeys, key);
+    public long getCurrentToggledKeys(){
+        return currentToggledKeys;
+    }
+
+    public boolean toggle(long keyId){
+        currentToggledKeys = ToggledKey.toggle(currentToggledKeys, keyId);
+        return ToggledKey.isToggleOn(currentToggledKeys, keyId);
     }
 
     private KeyNode<KeyAction> getTree(){
