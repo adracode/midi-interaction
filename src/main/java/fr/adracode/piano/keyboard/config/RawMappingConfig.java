@@ -12,7 +12,8 @@ public record RawMappingConfig(
     public record Settings(
             int keyInterval,
             int toggleOnceBelow,
-            int sustainRepeat
+            int sustainRepeat,
+            int sustainAfter
     ) { }
 
     public record MultiKey(

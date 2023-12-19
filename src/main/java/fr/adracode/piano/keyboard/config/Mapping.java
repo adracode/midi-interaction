@@ -115,6 +115,9 @@ public class Mapping {
 
     //TODO: simplify
     public Optional<KeyAction> getMulti(int octave, int tone){
+        if(tone == 0){
+            return Optional.empty();
+        }
         long key = Key.from(octave, tone);
         KeyNode<KeyAction> toggle = (current == null ? toggles : current).get(key).orElse(null);
         if(toggle != null){

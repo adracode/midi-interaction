@@ -1,7 +1,8 @@
 settings:
   key-interval: 50 #ms
   toggle-once-below: 80 #intensity
-  sustain-repeat: 25 #ms
+  sustain-repeat: 35 #ms
+  sustain-after: 500 #ms
 
 single:
   4:
