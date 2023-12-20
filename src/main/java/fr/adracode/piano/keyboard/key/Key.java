@@ -2,6 +2,7 @@ package fr.adracode.piano.keyboard.key;
 
 import java.awt.event.KeyEvent;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 public record Key(int octave, int tone) {
 
@@ -19,6 +20,16 @@ public record Key(int octave, int tone) {
         } catch(NoSuchFieldException | IllegalAccessException e){
             return Optional.empty();
         }
+    }
+
+    public static IntStream binaryStream(int number){
+        return IntStream.range(0, 32)
+                .map(i -> (number >> i) & 1);
+    }
+
+    public static IntStream weightedBinaryStream(int number){
+        return IntStream.range(0, 32)
+                .map(i -> ((number >> i) & 1) * (1 << i));
     }
 
 }

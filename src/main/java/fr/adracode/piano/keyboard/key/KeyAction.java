@@ -48,7 +48,6 @@ public final class KeyAction {
         private String result;
         private Integer keyCode;
         private String toggle;
-        private String toggleOnce;
 
         public Builder result(String result){
             this.result = result;

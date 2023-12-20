@@ -1,7 +1,9 @@
 package fr.adracode.piano.keyboard;
 
 import fr.adracode.piano.keyboard.config.Mapping;
+import fr.adracode.piano.keyboard.key.Key;
 import fr.adracode.piano.keyboard.key.KeyAction;
+import fr.adracode.piano.keyboard.key.Pedal;
 import fr.adracode.piano.keyboard.key.ToggledKey;
 import it.unimi.dsi.fastutil.ints.Int2LongArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2LongMap;
@@ -62,20 +64,23 @@ public class KeyboardSimulator implements MqttCallback {
                 }
             }
             case ShortMessage.CONTROL_CHANGE -> {
-                /*if(data1 == 64){
-                    if(data2 != 0 && !isSustain()){
-                        timerTask = timer.scheduleAtFixedRate(() -> {
-                            for(int octave = 0; octave < OCTAVE; ++octave){
-                                operateKeyboard(lastKey);
-                            }
-                        }, 0, mapping.getSettings().sustainRepeat(), TimeUnit.MILLISECONDS);
-                    } else if(isSustain()){
-                        timerTask.cancel(true);
-                        for(int octave = 0; octave < OCTAVE; ++octave){
-                            keyboardMapping.reset(octave);
-                        }
+                if(data1 == 64){
+                    Pedal sustain = Pedal.get("sustain");
+                    if(sustain.isToggleMode() || data2 > 0){
+                        Key.weightedBinaryStream(sustain.getFakeKey().tone())
+                                .filter(wBit -> wBit > 0)
+                                .forEach(wBit -> handleKeyPressed(
+                                        sustain.getFakeKey().octave() * TONE + TONE - Integer.numberOfTrailingZeros(wBit) - 1,
+                                        127,
+                                        !sustain.isToggleMode()));
+                    } else if(!sustain.isToggleMode() && data2 == 0){
+                        Key.weightedBinaryStream(sustain.getFakeKey().tone())
+                                .filter(wBit -> wBit > 0)
+                                .forEach(wBit -> handleKeyReleased(
+                                        sustain.getFakeKey().octave() * TONE + TONE - Integer.numberOfTrailingZeros(wBit) - 1));
                     }
-                }*/
+
+                }
             }
         }
     }
@@ -85,8 +90,13 @@ public class KeyboardSimulator implements MqttCallback {
     }
 
     private void handleKeyPressed(int data1, int data2){
+        handleKeyPressed(data1, data2, true);
+    }
 
-        currentKeyPressed.put(data1, System.currentTimeMillis());
+    private void handleKeyPressed(int data1, int data2, boolean registerKey){
+        if(registerKey){
+            currentKeyPressed.put(data1, System.currentTimeMillis());
+        }
         int octave = data1 / TONE;
         keyboardMapping.registerKey(data1);
         if(data2 >= mapping.getSettings().toggleOnceBelow()){
@@ -104,6 +114,7 @@ public class KeyboardSimulator implements MqttCallback {
                             .forEach(entry -> keyboardMapping.registerKey(entry.getIntKey()));
 
                     var currentKey = keyboardMapping.getCurrentKey(octave);
+                    System.out.println(currentKey);
                     currentKey.ifPresentOrElse(key -> {
                         if(key.isLeft()){
                             operateKeyboard(key.getLeft());

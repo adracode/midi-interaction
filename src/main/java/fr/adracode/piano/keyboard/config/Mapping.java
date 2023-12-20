@@ -12,7 +12,9 @@ import org.apache.commons.cli.ParseException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -49,12 +51,40 @@ public class Mapping {
                 }
             }
 
-            rawMapping.toggles().forEach(toggleKey -> ToggledKey.get(toggleKey.result()));
-            for(RawMappingConfig.MultiKey multi : rawMapping.toggles()){
-                buildTree(multi, this.toggles, t -> new KeyAction.Builder().toggle(t.result()));
+
+            rawMapping.toggles().forEach(toggleKey -> ToggledKey.get(toggleKey.toggle()));
+            for(RawMappingConfig.Toggle toggle : rawMapping.toggles()){
+                buildTree(new RawMappingConfig.MultiKey(
+                        List.of(toggle.trigger()),
+                        toggle.toggle(),
+                        null,
+                        null
+                ), this.toggles, t -> new KeyAction.Builder().toggle(t.result()));
             }
 
-            for(RawMappingConfig.MultiKey multi : rawMapping.multi()){
+            List<RawMappingConfig.MultiKey> multiKeys = new ArrayList<>(rawMapping.multi());
+
+            RawMappingConfig.Pedal sustain = rawMapping.pedals().sustain();
+            Key fakeTrigger = Pedal.get("sustain").getFakeKey();
+
+            if(sustain.toggle() != null){
+                Pedal.get("sustain").asToggle();
+                buildTree(new RawMappingConfig.MultiKey(
+                        List.of(Map.of(String.valueOf(fakeTrigger.octave()), String.valueOf(fakeTrigger.tone()))),
+                        rawMapping.pedals().sustain().toggle(),
+                        null,
+                        null
+                ), this.toggles, t -> new KeyAction.Builder().toggle(t.result()));
+            } else if(sustain.result() != null || sustain.key() != null){
+                multiKeys.add(new RawMappingConfig.MultiKey(
+                        List.of(Map.of(String.valueOf(fakeTrigger.octave()), String.valueOf(fakeTrigger.tone()))),
+                        sustain.result(),
+                        sustain.with(),
+                        sustain.key()
+                ));
+            }
+
+            for(RawMappingConfig.MultiKey multi : multiKeys){
                 List<ToggledKey> toggledKeys = Optional.ofNullable(multi.with()).orElse(List.of()).stream()
                         .map(ToggledKey::get).toList();
                 long toggleKeys = ToggledKey.of(toggledKeys);

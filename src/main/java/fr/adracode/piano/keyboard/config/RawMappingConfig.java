@@ -6,7 +6,8 @@ import java.util.Map;
 public record RawMappingConfig(
         Settings settings,
         Map<String, Map<String, String>> single,
-        List<MultiKey> toggles,
+        List<Toggle> toggles,
+        Pedals pedals,
         List<MultiKey> multi) {
 
     public record Settings(
@@ -21,4 +22,19 @@ public record RawMappingConfig(
             String result,
             List<String> with,
             String key) { }
+
+    public record Toggle(
+            Map<String, String> trigger,
+            String toggle) { }
+
+    public record Pedals(
+            Pedal sustain
+    ) { }
+
+    public record Pedal(
+            String toggle,
+            List<String> with,
+            String result,
+            String key
+    ) { }
 }

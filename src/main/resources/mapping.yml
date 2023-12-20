@@ -56,16 +56,19 @@ single:
 toggles:
   - trigger:
       4: 256
-    result: PUNCTUATION
+    toggle: PUNCTUATION
   - trigger:
       4: 32
-    result: CONTROL
+    toggle: CONTROL
   - trigger:
       4: 8
-    result: SHIFT
+    toggle: SHIFT
   - trigger:
       4: 1024
-    result: ALT
+    toggle: ALT
+pedals:
+  sustain:
+    toggle: NAVIGATION
 multi:
   - trigger: [ 5: 256, 4: 16 ]
     result: "é"
@@ -149,3 +152,6 @@ multi:
     key: 8
   - trigger: [ 4: 704 ]
     result: "~"
+  - trigger: [ 4: 1 ]
+    with: NAVIGATION
+    result: "w"
