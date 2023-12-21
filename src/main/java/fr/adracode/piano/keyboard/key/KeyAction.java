@@ -1,52 +1,51 @@
 package fr.adracode.piano.keyboard.key;
 
-import com.spencerwi.either.Either;
+import it.unimi.dsi.fastutil.ints.IntList;
 
 import java.util.Objects;
 import java.util.Optional;
 
 public final class KeyAction {
-    private final Either<Integer, String> result;
-    private final ToggledKey toggle;
+    private final String unicode;
+    private final IntList keys;
+    private final ToggleKey toggle;
 
-    public KeyAction(String result, Integer keyCode, ToggledKey toggle){
-        this.result = keyCode == null && result == null ? null : Either.either(() -> keyCode, () -> result);
+    public KeyAction(String unicode, IntList keys, ToggleKey toggle){
+        this.keys = keys;
+        this.unicode = unicode;
         this.toggle = toggle;
     }
 
-    public Optional<Either<Integer, String>> getResult(){
-        return Optional.ofNullable(result);
+    public Optional<String> getUnicode(){
+        return Optional.ofNullable(unicode);
     }
 
-    public Optional<ToggledKey> getToggle(){
+    public Optional<IntList> getKeys(){
+        return Optional.ofNullable(keys);
+    }
+
+    public Optional<ToggleKey> getToggle(){
         return Optional.ofNullable(toggle);
     }
 
     @Override
-    public boolean equals(Object obj){
-        if(obj == this) return true;
-        if(obj == null || obj.getClass() != this.getClass()) return false;
-        var that = (KeyAction)obj;
-        return Objects.equals(this.result, that.result) &&
-                Objects.equals(this.toggle, that.toggle);
+    public boolean equals(Object o){
+        if(this == o)
+            return true;
+        if(!(o instanceof KeyAction keyAction))
+            return false;
+        return Objects.equals(unicode, keyAction.unicode) && Objects.equals(keys, keyAction.keys) && Objects.equals(toggle, keyAction.toggle);
     }
 
     @Override
     public int hashCode(){
-        return Objects.hash(result, toggle);
-    }
-
-    @Override
-    public String toString(){
-        return "KeyAction[" +
-                "result=" + (result == null ? "null" : result.isLeft() ? result.getLeft() : result.isRight() ? result.getRight() : "") + ", " +
-                "toggle=" + toggle + ']';
+        return Objects.hash(unicode, keys, toggle);
     }
 
     public static class Builder {
 
         private String result;
-        private Integer keyCode;
+        private IntList keys;
         private String toggle;
 
         public Builder result(String result){
@@ -54,8 +53,8 @@ public final class KeyAction {
             return this;
         }
 
-        public Builder keyCode(Integer keyCode){
-            this.keyCode = keyCode;
+        public Builder keyCode(IntList keyCode){
+            this.keys = keyCode;
             return this;
         }
 
@@ -65,8 +64,7 @@ public final class KeyAction {
         }
 
         public KeyAction build(){
-            return new KeyAction(result, keyCode,
-                    ToggledKey.get(toggle));
+            return new KeyAction(result, keys, ToggleKey.get(toggle));
         }
     }
 

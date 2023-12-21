@@ -1,8 +1,13 @@
 package fr.adracode.piano.keyboard;
 
-import com.spencerwi.either.Either;
 import fr.adracode.piano.keyboard.config.Mapping;
+import fr.adracode.piano.keyboard.config.MappingParser;
+import fr.adracode.piano.keyboard.key.Key;
 import fr.adracode.piano.keyboard.key.KeyAction;
+import fr.adracode.piano.keyboard.key.KeyNode;
+import fr.adracode.piano.keyboard.key.ToggleKey;
+import it.unimi.dsi.fastutil.longs.Long2ObjectArrayMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 
 import java.util.Optional;
 
@@ -11,11 +16,17 @@ public class KeyboardMapping {
     public static final int OCTAVE = 11;
     public static final int TONE = 12;
 
-    private final Mapping mapping;
+    private final Long2ObjectMap<Mapping<KeyAction>> mapping = new Long2ObjectArrayMap<>();
+    private final Mapping<KeyAction> toggleMapping;
     private final int[] hand = new int[OCTAVE];
 
-    public KeyboardMapping(Mapping mappingConfig){
-        this.mapping = mappingConfig;
+    private long toggles;
+
+    public KeyboardMapping(MappingParser parser){
+        toggleMapping = new Mapping<>(parser.getTreeToggle());
+        parser.getToggleCombinations().forEach(combination ->
+                mapping.put(combination, new Mapping<>(parser.getTreeWith(
+                        ToggleKey.from(combination).stream().map(ToggleKey::getLabel).toList()))));
     }
 
     public void registerKey(int data){
@@ -42,15 +53,37 @@ public class KeyboardMapping {
         hand[index] = 0;
     }
 
-    public Optional<Either<Integer, KeyAction>> getCurrentKey(int index){
-        System.out.println(hand[index]);
-        Either<Integer, KeyAction> result = Either.either(
-                () -> mapping.getSingle(index, hand[index]).orElse(null),
-                () -> mapping.getMulti(index, hand[index]).orElse(null));
-        Optional<Either<Integer, KeyAction>> optionalResult = result.isLeft() && result.getLeft() == null || result.isRight() && result.getRight() == null ?
-                Optional.empty() :
-                Optional.of(result);
+    public boolean toggle(long toggleKey){
+        toggles = ToggleKey.toggle(toggles, toggleKey);
+        return ToggleKey.isToggleOn(toggles, toggleKey);
+    }
 
-        return optionalResult;
+    public Optional<KeyAction> getCurrentKey(int octave){
+        if(octave < 0 || octave > OCTAVE || hand[octave] == 0){
+            return Optional.empty();
+        }
+        long key = Key.from(octave, hand[octave]);
+        return getMulti(toggleMapping, key)
+                .or(() -> getMulti(Optional.ofNullable(mapping.get(toggles)).orElse(mapping.get(0)), key)
+                        .or(() -> {
+                            ToggleKey.Fallback fallback = ToggleKey.getFallback(toggles).orElse(null);
+                            if(fallback == null){
+                                return Optional.empty();
+                            }
+                            if(fallback == ToggleKey.Fallback.NORMAL){
+                                return getMulti(mapping.get(0), key);
+                            }
+                            return Optional.empty();
+                        }));
+    }
+
+    public long currentToggles(){
+        return toggles;
+    }
+
+    private Optional<KeyAction> getMulti(Mapping<KeyAction> mapping, long key){
+        var result = mapping.getNext(key);
+        result.flatMap(KeyNode::getValue).ifPresent($ -> mapping.resetPath());
+        return result.flatMap(KeyNode::getValue);
     }
 }

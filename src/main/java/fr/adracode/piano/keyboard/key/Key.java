@@ -27,9 +27,9 @@ public record Key(int octave, int tone) {
                 .map(i -> (number >> i) & 1);
     }
 
-    public static IntStream weightedBinaryStream(int number){
-        return IntStream.range(0, 32)
-                .map(i -> ((number >> i) & 1) * (1 << i));
+    public static IntStream weightedBinaryStream(long number){
+        return IntStream.range(0, 64)
+                .map(i -> (int)((number >> i) & 1) * (1 << i));
     }
 
 }

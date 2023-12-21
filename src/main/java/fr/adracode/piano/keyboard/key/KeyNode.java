@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public class KeyNode<T> {
 
-    private long key;
+    private final long key;
     private Long2ObjectMap<KeyNode<T>> children;
 
     public KeyNode(long key){
@@ -49,7 +49,7 @@ public class KeyNode<T> {
     @Override
     public String toString(){
         return "KeyNode{" +
-                "key=" + key +
+                "keys=" + key +
                 ", children=" + children +
                 '}';
     }

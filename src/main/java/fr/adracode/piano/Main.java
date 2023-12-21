@@ -50,7 +50,7 @@ public class Main {
         options.addOption(Option.builder()
                 .option("k")
                 .longOpt("keyboard")
-                .desc("send key through mqtt")
+                .desc("send keys through mqtt")
                 .build());
 
         options.addOption(Option.builder()

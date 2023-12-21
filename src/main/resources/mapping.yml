@@ -4,54 +4,56 @@ settings:
   sustain-repeat: 35 #ms
   sustain-after: 500 #ms
 
-single:
-  4:
-    4: A
-    16: E
-    64: S
-    128: I
-    512: T
-    20: O
-    68: D
-    132: C
-    516: M
-    80: B
-    144: G
-    528: H
-    576: Z
-    640: W
-    84: COLON
-    1: NUMPAD0
-    17: NUMPAD1
-    65: NUMPAD2
-    81: NUMPAD3
-    129: NUMPAD4
-    145: NUMPAD5
-    193: NUMPAD6
-    209: NUMPAD7
-    513: NUMPAD8
-    529: NUMPAD9
-    2049: ESCAPE
-    2048: TAB
-  5:
-    512: SPACE
-    128: N
-    64: R
-    16: U
-    4: L
-    640: P
-    576: V
-    528: Q
-    516: F
-    192: J
-    144: X
-    132: Y
-    68: K
-    20: COMMA
-    704: SEMICOLON
-    8: DEAD_CIRCUMFLEX
-    1: BACK_SPACE
-    2049: ENTER
+simple:
+  - octave: 4
+    mapping:
+      - 4: A
+      - 16: E
+      - 64: S
+      - 128: I
+      - 512: T
+      - 20: O
+      - 68: D
+      - 132: C
+      - 516: M
+      - 80: B
+      - 144: G
+      - 528: H
+      - 576: Z
+      - 640: W
+      - 84: COLON
+      - 1: NUMPAD0
+      - 17: NUMPAD1
+      - 65: NUMPAD2
+      - 81: NUMPAD3
+      - 129: NUMPAD4
+      - 145: NUMPAD5
+      - 193: NUMPAD6
+      - 209: NUMPAD7
+      - 513: NUMPAD8
+      - 529: NUMPAD9
+      - 2049: ESCAPE
+      - 2048: TAB
+  - octave: 5
+    mapping:
+      - 512: SPACE
+      - 128: N
+      - 64: R
+      - 16: U
+      - 4: L
+      - 640: P
+      - 576: V
+      - 528: Q
+      - 516: F
+      - 192: J
+      - 144: X
+      - 132: Y
+      - 68: K
+      - 20: COMMA
+      - 704: SEMICOLON
+      - 8: DEAD_CIRCUMFLEX
+      - 1: BACK_SPACE
+      - 2049: ENTER
 
 toggles:
   - trigger:
@@ -60,12 +62,15 @@ toggles:
   - trigger:
       4: 32
     toggle: CONTROL
+    fallback: NORMAL
   - trigger:
       4: 8
     toggle: SHIFT
+    fallback: NORMAL
   - trigger:
       4: 1024
     toggle: ALT
+    fallback: NORMAL
 pedals:
   sustain:
     toggle: NAVIGATION
@@ -88,12 +93,12 @@ multi:
   - trigger: [ 5: 2, 4: 132 ]
     result: "ç"
   - trigger: [ 4: 532 ]
-    key: 6
+    keys: 6
   - trigger: [ 4: 580 ]
-    key: MULTIPLY
+    keys: MULTIPLY
   - trigger: [ 5: 64 ]
     with: PUNCTUATION
-    key: 5
+    keys: 5
   - trigger: [ 5: 16 ]
     with: PUNCTUATION
     result: "["
@@ -131,11 +136,11 @@ multi:
     with: PUNCTUATION
     result: ">"
   - trigger: [ 5: 644 ]
-    key: DIVIDE
+    keys: DIVIDE
   - trigger: [ 4: 644 ]
-    key: ADD
+    keys: ADD
   - trigger: [ 5: 580 ]
-    key: EQUALS
+    keys: EQUALS
   - trigger: [ 5: 532 ]
     result: "%"
   - trigger: [ 5: 208 ]
@@ -149,9 +154,24 @@ multi:
   - trigger: [ 5: 656 ]
     result: "°"
   - trigger: [ 4: 196 ]
-    key: 8
+    keys: 8
   - trigger: [ 4: 704 ]
     result: "~"
-  - trigger: [ 4: 1 ]
+  - trigger: [ 4: 512 ]
     with: NAVIGATION
-    result: "w"
+    keys: DOWN
+  - trigger: [ 4: 128 ]
+    with: NAVIGATION
+    keys: LEFT
+  - trigger: [ 4: 64 ]
+    with: NAVIGATION
+    keys: UP
+  - trigger: [ 4: 16 ]
+    with: NAVIGATION
+    keys: RIGHT
+  - trigger: [ 5: 512 ]
+    with: CONTROL
+    keys: C
+  - trigger: [ 5: 128 ]
+    with: CONTROL
+    keys: V
