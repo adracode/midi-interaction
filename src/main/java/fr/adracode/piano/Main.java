@@ -1,6 +1,7 @@
 package fr.adracode.piano;
 
-import fr.adracode.piano.keyboard.KeyboardSimulator;
+import fr.adracode.piano.keyboard.KeyboardInterface;
+import fr.adracode.piano.keyboard.os.WindowsKeyboard;
 import fr.adracode.piano.mqtt.MqttPublisher;
 import fr.adracode.piano.mqtt.MqttSubscriber;
 import fr.adracode.piano.mqtt.MqttTopicPublisher;
@@ -132,7 +133,7 @@ public class Main {
                     cmd.getOptionValue("hostname"),
                     ((Number)cmd.getParsedOptionValue("port")).intValue(),
                     "piano/keyboard",
-                    new KeyboardSimulator("mapping.yml")
+                    new KeyboardInterface("mapping.yml", new WindowsKeyboard())
             );
             Signal.handle(new Signal("INT"), signal -> {
                 try {

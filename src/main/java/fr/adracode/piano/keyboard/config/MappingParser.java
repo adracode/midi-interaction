@@ -1,110 +1,84 @@
 package fr.adracode.piano.keyboard.config;
 
-import fr.adracode.piano.keyboard.key.*;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.longs.LongArraySet;
-import it.unimi.dsi.fastutil.longs.LongSet;
+import fr.adracode.piano.keyboard.key.Key;
+import fr.adracode.piano.keyboard.key.Pedal;
+import fr.adracode.piano.keyboard.key.ToggleKey;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class MappingParser {
 
     private final RawMappingConfig rawConfig;
-    private final List<RawMappingConfig.MultiKey> keys = new ArrayList<>();
-    private final List<RawMappingConfig.Toggle> toggles = new ArrayList<>();
+    private final Long2ObjectMap<Key> keys = new Long2ObjectOpenHashMap<>();
+    private final Long2ObjectMap<ToggleKey> toggleKeys;
+    private final Map<String, ToggleKey> toggleKeysByLabel;
 
     public MappingParser(RawMappingConfig rawConfig){
         this.rawConfig = rawConfig;
 
-        rawConfig.toggles().forEach(toggleKey -> {
-            ToggleKey key = ToggleKey.get(toggleKey.toggle());
-            ToggleKey.Fallback.of(toggleKey.fallback()).ifPresent(key::setFallback);
-        });
+        rawConfig.availablePedals().forEach(Pedal::init);
+        toggleKeys = initToggleKeys();
+        toggleKeys.put(ToggleKey.NO_TOGGLE.getKey(), ToggleKey.NO_TOGGLE);
+        toggleKeysByLabel = toggleKeys.values().stream().collect(Collectors.toMap(ToggleKey::getLabel, Function.identity()));
 
-        keys.addAll(rawConfig.multi());
-        rawConfig.simple().forEach(simpleMapping ->
-                keys.addAll(simpleMapping.keys().stream().map(simpleKey ->
-                        new RawMappingConfig.MultiKey(simpleKey.getTriggers(), simpleKey.getUnicode(),
-                                Set.of(), simpleKey.getKeys())).toList()));
+    }
 
-        toggles.addAll(rawConfig.toggles());
-
-        var sustain = rawConfig.pedals().sustain();
-        Key fakeTrigger = Pedal.get("sustain").getFakeKey();
-
-        if(sustain.result() != null || sustain.keys() != null){
-            keys.add(new RawMappingConfig.MultiKey(
-                    List.of(Map.of(String.valueOf(fakeTrigger.octave()), String.valueOf(fakeTrigger.tone()))),
-                    sustain.result(),
-                    sustain.with(),
-                    sustain.keys()
-            ));
+    public int[] getToggleMasks(int[] masks){
+        for(ToggleKey value : toggleKeys.values()){
+            masks[value.getOctave()] |= value.getTone();
         }
-        if(sustain.toggle() != null){
-            Pedal.get("sustain").asToggle();
-            toggles.add(new RawMappingConfig.Toggle(
-                    Map.of(String.valueOf(fakeTrigger.octave()), String.valueOf(fakeTrigger.tone())),
-                    sustain.toggle(),
-                    sustain.fallback()
-            ));
-        }
+        return masks;
     }
 
     public KeyboardSettings getSettings(){
         return KeyboardSettings.fromRaw(rawConfig.settings());
     }
 
-    public LongSet getToggleCombinations(){
-        LongArraySet combinations = new LongArraySet(
-                keys.stream().map(key -> ToggleKey.of(
-                        key.with().stream().map(ToggleKey::get).toList())).collect(Collectors.toSet()));
-        combinations.addAll(toggles.stream().map(toggle -> ToggleKey.get(toggle.toggle()).getId()).toList());
-        return combinations;
-    }
+    public Long2ObjectMap<Key> getKeys(){
+        rawConfig.keyboard().forEach(mappingUnit -> {
+            long togglesId = ToggleKey.of(mappingUnit.toggle().stream().map(toggleKeysByLabel::get).toList());
+            mappingUnit.mapping().forEach(rawKey -> {
+                Key key = parseTrigger(rawKey.trigger());
 
-    public KeyNode<KeyAction> getTreeWith(Collection<String> toggles){
-        return getTree(keys.stream()
-                        .filter(multiKey -> toggles.containsAll(multiKey.with()) &&
-                                multiKey.with().containsAll(toggles)).toList(),
-                multiKey -> new KeyAction.Builder()
-                        .keyCode(new IntArrayList(multiKey.getKeys().stream().map(key -> Key.getKeyCode(key).orElse(null))
-                                .filter(Objects::nonNull).toList()))
-                        .result(multiKey.getUnicode())
-        );
-    }
-
-    public KeyNode<KeyAction> getTreeToggle(){
-        return getTree(toggles,
-                toggle -> new KeyAction.Builder()
-                        .toggle(toggle.getUnicode())
-        );
-    }
-
-    private <T extends HasTriggers & HasResults> KeyNode<KeyAction> getTree(
-            List<T> list,
-            Function<T, KeyAction.Builder> buildChild){
-        KeyNode<KeyAction> root = new KeyNode<>(0);
-        list.forEach(key -> {
-            KeyNode<KeyAction> node = root;
-            var triggers = key.getTriggers();
-            for(int i = 0; i < triggers.size(); i++){
-                //only the first because the map only contains one octave with its tone
-                var trigger = triggers.get(i).entrySet().stream().findFirst().orElseThrow();
-                long id = Key.from(
-                        Integer.parseInt(trigger.getKey()), //octave
-                        Integer.parseInt(trigger.getValue())); //node
-
-                var child = node.get(id);
-                node = child.isPresent() ?
-                        child.get() :
-                        node.addChild(i == triggers.size() - 1 ?
-                                new KeyLeaf<>(id, buildChild.apply(key).build()) :
-                                new KeyNode<>(id)
-                        );
-            }
+                rawKey.result().forEach(result ->
+                        Key.getKeyCode(result).ifPresentOrElse(
+                                keyCode -> key.addResult(keyCode, togglesId),
+                                () -> key.addResult(result, togglesId)));
+                keys.put(key.getKey(), key);
+            });
         });
-        return root;
+        return keys;
     }
+
+    public Long2ObjectMap<ToggleKey> getToggleKeys(){
+        return toggleKeys;
+    }
+
+    private Long2ObjectMap<ToggleKey> initToggleKeys(){
+        Long2ObjectMap<ToggleKey> keys = new Long2ObjectOpenHashMap<>();
+        rawConfig.toggles().forEach(toggle -> {
+            Key key = parseTrigger(toggle.trigger());
+            ToggleKey toggleKey = new ToggleKey(key.getOctave(), key.getTone(), toggle.toggle());
+            ToggleKey.Fallback.of(toggle.fallback()).ifPresent(toggleKey::setFallback);
+            keys.put(toggleKey.getKey(), toggleKey);
+        });
+
+        return keys;
+    }
+
+    private Key parseTrigger(String trigger){
+        String[] rawTrigger = trigger.split("/");
+        if(rawTrigger.length == 1){
+            return Pedal.get(rawTrigger[0]).orElseThrow().getFakeKey();
+        }
+        int octave = Integer.parseInt(rawTrigger[0]);
+        int tone = Integer.parseInt(rawTrigger[1]);
+        return Optional.ofNullable(keys.get(Key.from(octave, tone))).orElseGet(() -> new Key(octave, tone));
+    }
+
 }

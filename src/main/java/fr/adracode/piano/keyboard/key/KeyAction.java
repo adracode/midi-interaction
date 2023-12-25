@@ -1,5 +1,6 @@
 package fr.adracode.piano.keyboard.key;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 
 import java.util.Objects;
@@ -8,12 +9,10 @@ import java.util.Optional;
 public final class KeyAction {
     private final String unicode;
     private final IntList keys;
-    private final ToggleKey toggle;
 
-    public KeyAction(String unicode, IntList keys, ToggleKey toggle){
+    public KeyAction(String unicode, IntList keys){
         this.keys = keys;
         this.unicode = unicode;
-        this.toggle = toggle;
     }
 
     public Optional<String> getUnicode(){
@@ -24,47 +23,46 @@ public final class KeyAction {
         return Optional.ofNullable(keys);
     }
 
-    public Optional<ToggleKey> getToggle(){
-        return Optional.ofNullable(toggle);
-    }
-
     @Override
     public boolean equals(Object o){
         if(this == o)
             return true;
-        if(!(o instanceof KeyAction keyAction))
+        if(!(o instanceof KeyAction action))
             return false;
-        return Objects.equals(unicode, keyAction.unicode) && Objects.equals(keys, keyAction.keys) && Objects.equals(toggle, keyAction.toggle);
+        return Objects.equals(unicode, action.unicode) && Objects.equals(keys, action.keys);
     }
 
     @Override
     public int hashCode(){
-        return Objects.hash(unicode, keys, toggle);
+        return Objects.hash(unicode, keys);
     }
 
     public static class Builder {
 
-        private String result;
-        private IntList keys;
-        private String toggle;
+        private String result = "";
+        private IntList keys = new IntArrayList();
+
+        public Builder(KeyAction action){
+            if(action != null){
+                this.result = action.unicode;
+                this.keys = action.keys;
+            }
+        }
 
         public Builder result(String result){
-            this.result = result;
+            this.result = this.result + result;
             return this;
         }
 
-        public Builder keyCode(IntList keyCode){
-            this.keys = keyCode;
-            return this;
-        }
-
-        public Builder toggle(String toggle){
-            this.toggle = toggle;
+        public Builder keyCode(int keyCode){
+            this.keys.add(keyCode);
             return this;
         }
 
         public KeyAction build(){
-            return new KeyAction(result, keys, ToggleKey.get(toggle));
+            return new KeyAction(
+                    result.isEmpty() ? null : result,
+                    keys.isEmpty() ? null : keys);
         }
     }
 

@@ -6,115 +6,67 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import fr.adracode.piano.keyboard.config.KeyboardSettings;
 import fr.adracode.piano.keyboard.config.MappingParser;
 import fr.adracode.piano.keyboard.config.RawMappingConfig;
-import fr.adracode.piano.keyboard.key.Key;
-import fr.adracode.piano.keyboard.key.Pedal;
-import fr.adracode.piano.keyboard.key.ToggleKey;
-import it.unimi.dsi.fastutil.ints.Int2LongArrayMap;
-import it.unimi.dsi.fastutil.ints.Int2LongMap;
-import it.unimi.dsi.fastutil.ints.IntList;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import fr.adracode.piano.keyboard.os.OSKeyboard;
 
-import javax.sound.midi.ShortMessage;
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
-import static fr.adracode.piano.keyboard.KeyboardMapping.OCTAVE;
-import static fr.adracode.piano.keyboard.KeyboardMapping.TONE;
+import static fr.adracode.piano.keyboard.KeyboardHand.OCTAVE_WITH_PEDALS;
+import static fr.adracode.piano.keyboard.KeyboardHand.TONE;
 
-public class KeyboardSimulator implements MqttCallback {
-
+public class KeyboardSimulator {
     private final KeyboardSettings settings;
 
-    private final Robot robot = new Robot();
     private final ScheduledExecutorService timer = Executors.newScheduledThreadPool(1);
-    private final UnicodeKeyboard unicodeKeyboard = new UnicodeKeyboard();
     private final KeyboardMapping keyboardMapping;
+    private final ToggleManager toggleManager;
+    private final int[] toggleMasks;
 
-    private final ScheduledFuture<?>[] timerTask = new ScheduledFuture[OCTAVE];
+    private final ScheduledFuture<?>[] timerTask = new ScheduledFuture[OCTAVE_WITH_PEDALS];
 
-    private boolean togglePermanently;
-    private long currentOnceToggledKeys;
-
-    private final Int2LongMap[] currentKeyPressed = new Int2LongMap[OCTAVE];
-
-    public KeyboardSimulator(String mappingFile) throws AWTException, IOException{
+    public KeyboardSimulator(String mappingFile, OSKeyboard keyboard) throws IOException{
         File f = new File(mappingFile);
         MappingParser parser = new MappingParser(new YAMLMapper()
                 .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
                 .setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
                 .readValue(f, RawMappingConfig.class));
-        keyboardMapping = new KeyboardMapping(parser);
+
         settings = parser.getSettings();
-        IntStream.range(0, OCTAVE).forEach(i -> currentKeyPressed[i] = new Int2LongArrayMap());
+        toggleMasks = parser.getToggleMasks(new int[OCTAVE_WITH_PEDALS]);
+        toggleManager = new ToggleManager(keyboard, settings.sustainAfter(), parser.getToggleKeys(), toggleMasks);
+        keyboardMapping = new KeyboardMapping(keyboard, parser.getKeys(), new KeyboardHand(settings.sustainAfter()),
+                Arrays.stream(toggleMasks).map(mask -> ~mask).toArray(), toggleManager);
+
+        System.out.println("Ready!");
     }
 
-    @Override
-    public void connectionLost(Throwable cause){
-        cause.printStackTrace();
-    }
-
-    @Override
-    public void messageArrived(String topic, MqttMessage message){
-        String rawMessage = message.toString();
-        String[] parts = rawMessage.split(",");
-        int command = Integer.parseInt(parts[0].trim());
-        int data1 = Integer.parseInt(parts[1].trim());
-        int data2 = Integer.parseInt(parts[2].trim());
-        switch(command){
-            case ShortMessage.NOTE_ON -> {
-                if(data2 != 0){
-                    handleKeyPressed(data1, data2);
-                } else {
-                    handleKeyReleased(data1);
-                }
-            }
-            case ShortMessage.CONTROL_CHANGE -> {
-                if(data1 == 64){
-                    Pedal sustain = Pedal.get("sustain");
-                    if(sustain.isToggleMode() || data2 > 0){
-                        Key.weightedBinaryStream(sustain.getFakeKey().tone())
-                                .filter(wBit -> wBit > 0)
-                                .forEach(wBit -> handleKeyPressed(
-                                        sustain.getFakeKey().octave() * TONE + TONE - Integer.numberOfTrailingZeros(wBit) - 1,
-                                        127,
-                                        !sustain.isToggleMode()));
-                    } else if(!sustain.isToggleMode() && data2 == 0){
-                        Key.weightedBinaryStream(sustain.getFakeKey().tone())
-                                .filter(wBit -> wBit > 0)
-                                .forEach(wBit -> handleKeyReleased(
-                                        sustain.getFakeKey().octave() * TONE + TONE - Integer.numberOfTrailingZeros(wBit) - 1));
-                    }
-
-                }
-            }
+    public void handleKeyReleased(int data){
+        int octave = data / TONE;
+        if(isToggle(octave, data)){
+            toggleManager.getHand().unregisterKey(octave, data % TONE);
+        } else {
+            keyboardMapping.getHand().unregisterKey(octave, data % TONE);
         }
     }
 
-    private void handleKeyReleased(int data){
-        currentKeyPressed[data / TONE].remove(data);
+    private boolean isToggle(int octave, int tone){
+        return ((1 << (TONE - (tone % TONE) - 1)) & toggleMasks[octave]) != 0;
     }
 
-    private void handleKeyPressed(int data1, int data2){
-        handleKeyPressed(data1, data2, true);
-    }
-
-    private void handleKeyPressed(int data1, int data2, boolean registerKey){
-        if(registerKey){
-            currentKeyPressed[data1 / TONE].put(data1, System.currentTimeMillis());
-        }
+    public void handleKeyPressed(int data1, int data2){
         int octave = data1 / TONE;
-        keyboardMapping.registerKey(data1);
-        if(data2 >= settings.toggleOnceBelow()){
-            togglePermanently = true;
+        if(isToggle(octave, data1)){
+            if(data2 < settings.toggleOnceBelow()){
+                toggleManager.setOnce(octave);
+            }
+            toggleManager.getHand().registerKey(octave, data1 % TONE);
+        } else {
+            keyboardMapping.getHand().registerKey(octave, data1 % TONE);
         }
         if(!isSustain(octave)){
             //TODO: Si dans single, NE PEUT PAS être un premier trigger
@@ -122,38 +74,11 @@ public class KeyboardSimulator implements MqttCallback {
             timerTask[octave] = timer.scheduleAtFixedRate(() -> {
                 try {
                     synchronized(this){
-
-                        long sustainInterval = System.currentTimeMillis() - settings.sustainAfter();
-                        currentKeyPressed[octave].int2LongEntrySet().stream()
-                                .filter(entry -> entry.getLongValue() < sustainInterval)
-                                .forEach(entry -> keyboardMapping.registerKey(entry.getIntKey()));
-
-                        var currentKey = keyboardMapping.getCurrentKey(octave);
-                        currentKey.ifPresentOrElse(key -> {
-                            key.getToggle().ifPresent(this::toggle);
-                            key.getKeys().ifPresent(this::operateKeyboard);
-                            key.getUnicode().ifPresent(this::operateKeyboard);
-                        }, () -> {
-                            //TODO: Check for each octave
-                            if(currentKeyPressed[octave].isEmpty()){
-                                timerTask[octave].cancel(true);
-                                timerTask[octave] = null;
-                            }
-                        });
-                        reset(octave);
-                        togglePermanently = false;
-
-                        //Reset once-toggles only if there is no toggle keys
-                        if(currentKey.map(keyAction -> keyAction.getToggle().isEmpty()).orElse(false)){
-                            long toggled = keyboardMapping.currentToggles();
-                            LongStream.range(0, ToggleKey.getNextId()).forEach(i -> {
-                                long it = (long)Math.pow(2, i);
-                                if((it & currentOnceToggledKeys) != 0){
-                                    ToggleKey.get(it).getKeyCode().ifPresent((toggled & it) == 0 ? robot::keyPress : robot::keyRelease);
-                                }
-                            });
-                            keyboardMapping.toggle(currentOnceToggledKeys);
-                            currentOnceToggledKeys = 0;
+                        toggleManager.handle(octave);
+                        keyboardMapping.handle(octave);
+                        if(toggleManager.getHand().isEmpty(octave) && keyboardMapping.getHand().isEmpty(octave)){
+                            timerTask[octave].cancel(true);
+                            timerTask[octave] = null;
                         }
                     }
                 } catch(RuntimeException e){
@@ -167,46 +92,4 @@ public class KeyboardSimulator implements MqttCallback {
     private boolean isSustain(int octave){
         return timerTask[octave] != null && !timerTask[octave].isCancelled();
     }
-
-    @Override
-    public void deliveryComplete(IMqttDeliveryToken token){
-    }
-
-    public void toggle(ToggleKey key){
-        if(keyboardMapping.toggle(key.getId())){
-            key.getKeyCode().ifPresent(robot::keyPress);
-        } else {
-            key.getKeyCode().ifPresent(robot::keyRelease);
-        }
-        if(!togglePermanently){
-            currentOnceToggledKeys = ToggleKey.toggle(currentOnceToggledKeys, key.getId());
-        }
-    }
-
-    public void operateKeyboard(String str){
-        for(int i = 0; i < str.length(); ++i){
-            unicodeKeyboard.sendUnicode(str.codePointAt(i));
-        }
-    }
-
-    public void operateKeyboard(IntList charCodes){
-        if(charCodes.isEmpty()){
-            return;
-        }
-        try {
-            for(int i = 0; i < charCodes.size(); ++i){
-                robot.keyPress(charCodes.getInt(i));
-            }
-            for(int i = charCodes.size() - 1; i > 0; --i){
-                robot.keyRelease(charCodes.getInt(i));
-            }
-        } catch(IllegalArgumentException e){
-            e.printStackTrace();
-        }
-    }
-
-    private void reset(int octave){
-        keyboardMapping.reset(octave);
-    }
-
 }

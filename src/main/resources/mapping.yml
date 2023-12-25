@@ -1,177 +1,135 @@
 settings:
+  # Within this time, tones are combine to form a key
   key-interval: 50 #ms
+  # Between 0 - 127, below this is considered an once-toggle, which means toggle will trigger only once
   toggle-once-below: 80 #intensity
+  # When in sustain, key is repeated every X ms
   sustain-repeat: 35 #ms
+  # Time needed for a key to bey considered in sustain
   sustain-after: 500 #ms
 
-simple:
-  - octave: 4
-    mapping:
-      - 4: A
-      - 16: E
-      - 64: S
-      - 128: I
-      - 512: T
-      - 20: O
-      - 68: D
-      - 132: C
-      - 516: M
-      - 80: B
-      - 144: G
-      - 528: H
-      - 576: Z
-      - 640: W
-      - 84: COLON
-      - 1: NUMPAD0
-      - 17: NUMPAD1
-      - 65: NUMPAD2
-      - 81: NUMPAD3
-      - 129: NUMPAD4
-      - 145: NUMPAD5
-      - 193: NUMPAD6
-      - 209: NUMPAD7
-      - 513: NUMPAD8
-      - 529: NUMPAD9
-      - 2049: ESCAPE
-      - 2048: TAB
-  - octave: 5
-    mapping:
-      - 512: SPACE
-      - 128: N
-      - 64: R
-      - 16: U
-      - 4: L
-      - 640: P
-      - 576: V
-      - 528: Q
-      - 516: F
-      - 192: J
-      - 144: X
-      - 132: Y
-      - 68: K
-      - 20: COMMA
-      - 704: SEMICOLON
-      - 8: DEAD_CIRCUMFLEX
-      - 1: BACK_SPACE
-      - 2049: ENTER
+available-pedals: [ sustain ]
 
 toggles:
-  - trigger:
-      4: 256
-    toggle: PUNCTUATION
-  - trigger:
-      4: 32
-    toggle: CONTROL
+  - sustain: NAVIGATION
+  - 4/256: PUNCTUATION
+  - 4/32: CONTROL
     fallback: NORMAL
-  - trigger:
-      4: 8
-    toggle: SHIFT
+  - 4/8: SHIFT
     fallback: NORMAL
-  - trigger:
-      4: 1024
-    toggle: ALT
+  - 4/1024: ALT
     fallback: NORMAL
-pedals:
-  sustain:
-    toggle: NAVIGATION
-multi:
-  - trigger: [ 5: 256, 4: 16 ]
-    result: "é"
-  - trigger: [ 5: 256, 4: 16 ]
-    with: SHIFT
-    result: "É"
-  - trigger: [ 5: 32, 4: 16 ]
-    result: "è"
-  - trigger: [ 5: 32, 5: 16 ]
-    result: "ù"
-  - trigger: [ 5: 32, 4: 4 ]
-    result: "à"
-  - trigger: [ 5: 2, 4: 64 ]
-    result: "$"
-  - trigger: [ 5: 2, 4: 16 ]
-    result: "€"
-  - trigger: [ 5: 2, 4: 132 ]
-    result: "ç"
-  - trigger: [ 4: 532 ]
-    keys: 6
-  - trigger: [ 4: 580 ]
-    keys: MULTIPLY
-  - trigger: [ 5: 64 ]
-    with: PUNCTUATION
-    keys: 5
-  - trigger: [ 5: 16 ]
-    with: PUNCTUATION
-    result: "["
-  - trigger: [ 5: 4 ]
-    with: PUNCTUATION
-    result: "{"
-  - trigger: [ 5: 576 ]
-    with: PUNCTUATION
-    result: ")"
-  - trigger: [ 5: 528 ]
-    with: PUNCTUATION
-    result: "]"
-  - trigger: [ 5: 516 ]
-    with: PUNCTUATION
-    result: "}"
-  - trigger: [ 5: 640 ]
-    with: PUNCTUATION
-    result: "\""
-  - trigger: [ 5: 192 ]
-    with: PUNCTUATION
-    result: "'"
-  - trigger: [ 5: 80 ]
-    with: PUNCTUATION
-    result: "."
-  - trigger: [ 5: 592 ]
-    with: PUNCTUATION
-    result: "?"
-  - trigger: [ 5: 208 ]
-    with: PUNCTUATION
-    result: "!"
-  - trigger: [ 5: 144 ]
-    with: PUNCTUATION
-    result: "<"
-  - trigger: [ 5: 132 ]
-    with: PUNCTUATION
-    result: ">"
-  - trigger: [ 5: 644 ]
-    keys: DIVIDE
-  - trigger: [ 4: 644 ]
-    keys: ADD
-  - trigger: [ 5: 580 ]
-    keys: EQUALS
-  - trigger: [ 5: 532 ]
-    result: "%"
-  - trigger: [ 5: 208 ]
-    result: "#"
-  - trigger: [ 4: 208 ]
-    result: "|"
-  - trigger: [ 4: 148 ]
-    result: "&"
-  - trigger: [ 4: 656 ]
-    result: "@"
-  - trigger: [ 5: 656 ]
-    result: "°"
-  - trigger: [ 4: 196 ]
-    keys: 8
-  - trigger: [ 4: 704 ]
-    result: "~"
-  - trigger: [ 4: 512 ]
-    with: NAVIGATION
-    keys: DOWN
-  - trigger: [ 4: 128 ]
-    with: NAVIGATION
-    keys: LEFT
-  - trigger: [ 4: 64 ]
-    with: NAVIGATION
-    keys: UP
-  - trigger: [ 4: 16 ]
-    with: NAVIGATION
-    keys: RIGHT
-  - trigger: [ 5: 512 ]
-    with: CONTROL
-    keys: C
-  - trigger: [ 5: 128 ]
-    with: CONTROL
-    keys: V
+  - 5/256: ACUTE
+    fallback: NORMAL
+  - 5/32: GRAVE
+    fallback: NORMAL
+  - 5/2: OTHER
+    fallback: NORMAL
+
+keyboard:
+  - toggle: NO_TOGGLE
+    mapping:
+      - 4/4: A
+      - 4/16: E
+      - 4/64: S
+      - 4/128: I
+      - 4/512: T
+      - 4/20: O
+      - 4/68: D
+      - 4/132: C
+      - 4/516: M
+      - 4/80: B
+      - 4/144: G
+      - 4/528: H
+      - 4/576: Z
+      - 4/640: W
+      - 4/84: COLON
+      - 4/1: NUMPAD0
+      - 4/17: NUMPAD1
+      - 4/65: NUMPAD2
+      - 4/81: NUMPAD3
+      - 4/129: NUMPAD4
+      - 4/145: NUMPAD5
+      - 4/193: NUMPAD6
+      - 4/209: NUMPAD7
+      - 4/513: NUMPAD8
+      - 4/529: NUMPAD9
+      - 4/532: 6
+        4/580: MULTIPLY
+      - 4/2049: ESCAPE
+      - 4/2048: TAB
+      - 5/512: SPACE
+      - 5/128: N
+      - 5/64: R
+      - 5/16: U
+      - 5/4: L
+      - 5/640: P
+      - 5/576: V
+      - 5/528: Q
+      - 5/516: F
+      - 5/192: J
+      - 5/144: X
+      - 5/132: Y
+      - 5/68: K
+      - 5/20: COMMA
+      - 5/704: SEMICOLON
+      - 5/8: DEAD_CIRCUMFLEX
+      - 5/1: BACK_SPACE
+      - 5/2049: ENTER
+      - 4/532: 6
+      - 5/644: DIVIDE
+      - 4/644: ADD
+      - 5/580: EQUALS
+      - 5/532: "%"
+      - 5/208: "#"
+      - 4/208: "|"
+      - 4/148: "&"
+      - 4/656: "@"
+      - 5/656: "°"
+      - 4/196: 8
+      - 4/704: "~"
+  - toggle: ACUTE
+    mapping:
+      - 4/16: "é"
+  - toggle: GRAVE
+    mapping:
+      - 4/4: "à"
+      - 4/16: "è"
+      - 5/16: "ù"
+  - toggle: [ SHIFT, ACUTE ]
+    mapping:
+      - 4/16: "É"
+  - toggle: [ SHIFT, GRAVE ]
+    mapping:
+      - 4/4: "À"
+      - 4/16: "È"
+      - 5/16: "Ù"
+  - toggle: OTHER
+    mapping:
+      - 4/16: "€"
+      - 4/64: "$"
+      - 4/132: "ç"
+  - toggle: [ SHIFT, OTHER ]
+    mapping:
+      - 4/132: "Ç"
+  - toggle: PUNCTUATION
+    mapping:
+      - 5/64: 5
+      - 5/16: "["
+      - 5/4: "{"
+      - 5/576: ")"
+      - 5/528: "]"
+      - 5/516: "}"
+      - 5/640: "\""
+      - 5/192: "'"
+      - 5/80: "."
+      - 5/592: "?"
+      - 5/208: "!"
+      - 5/144: "<"
+      - 5/132: ">"
+  - toggle: NAVIGATION
+    mapping:
+      - 4/512: DOWN
+      - 4/128: LEFT
+      - 4/64: UP
+      - 4/16: RIGHT
