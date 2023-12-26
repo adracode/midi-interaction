@@ -100,8 +100,12 @@ public class Key {
     public static Optional<Integer> getKeyCode(String key){
         try {
             return Optional.of((int)KeyEvent.class.getField("VK_" + key).get(null));
-        } catch(NoSuchFieldException | IllegalAccessException e){
-            return Optional.empty();
+        } catch(NoSuchFieldException | IllegalAccessException $){
+            try {
+                return Optional.of(-Integer.parseInt(key));
+            } catch(NumberFormatException $_){
+                return Optional.empty();
+            }
         }
     }
 

@@ -7,12 +7,13 @@ import it.unimi.dsi.fastutil.ints.IntCollection;
 
 import java.awt.*;
 
-import static com.sun.jna.platform.win32.WinUser.KEYBDINPUT.*;
+import static com.sun.jna.platform.win32.WinUser.KEYBDINPUT.KEYEVENTF_KEYUP;
+import static com.sun.jna.platform.win32.WinUser.KEYBDINPUT.KEYEVENTF_UNICODE;
 
 public class WindowsKeyboard implements OSKeyboard {
 
-    private static final WinDef.DWORD KEY_DOWN = new WinDef.DWORD(KEYEVENTF_SCANCODE);
-    private static final WinDef.DWORD KEY_UP = new WinDef.DWORD(KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP);
+    private static final WinDef.DWORD KEY_DOWN = new WinDef.DWORD();
+    private static final WinDef.DWORD KEY_UP = new WinDef.DWORD(KEYEVENTF_KEYUP);
     private static final WinDef.DWORD UNICODE_DOWN = new WinDef.DWORD(KEYEVENTF_UNICODE);
     private static final WinDef.DWORD UNICODE_UP = new WinDef.DWORD(KEYEVENTF_UNICODE | KEYEVENTF_KEYUP);
 
@@ -54,16 +55,20 @@ public class WindowsKeyboard implements OSKeyboard {
 
     @Override
     public void pressKey(int code){
-        /*sendEvent(User32.INSTANCE.MapVirtualKeyEx(code, MAPVK_VK_TO_VSC,
-                User32.INSTANCE.GetKeyboardLayout(0)), KEY_DOWN);*/
-        robot.keyPress(code);
+        if(code < 0){
+            sendEvent(-code, KEY_DOWN);
+        } else {
+            robot.keyPress(code);
+        }
     }
 
     @Override
     public void releaseKey(int code){
-        /*sendEvent(User32.INSTANCE.MapVirtualKeyEx(code, MAPVK_VK_TO_VSC,
-                User32.INSTANCE.GetKeyboardLayout(0)), KEY_UP);*/
-        robot.keyRelease(code);
+        if(code < 0){
+            sendEvent(-code, KEY_UP);
+        } else {
+            robot.keyRelease(code);
+        }
     }
 
     public void sendUnicode(int unicode){
@@ -77,8 +82,11 @@ public class WindowsKeyboard implements OSKeyboard {
 
         input.type = new WinDef.DWORD(WinUser.INPUT.INPUT_KEYBOARD);
         input.input.setType("ki");
-
-        input.input.ki.wScan = new WinDef.WORD(code);
+        if((type.intValue() & KEYEVENTF_UNICODE) != 0){
+            input.input.ki.wScan = new WinDef.WORD(code);
+        } else {
+            input.input.ki.wVk = new WinDef.WORD(code);
+        }
         input.input.ki.dwFlags = type;
         input.input.ki.time = new WinDef.DWORD(0);
         User32.INSTANCE.SendInput(new WinDef.DWORD(1), (WinUser.INPUT[])input.toArray(1), input.size());
