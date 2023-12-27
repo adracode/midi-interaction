@@ -20,13 +20,7 @@ public class KeyboardInterface implements MqttCallback {
         keyboardSimulator = new KeyboardSimulator(mappingFile, keyboard);
     }
 
-    @Override
-    public void messageArrived(String topic, MqttMessage message){
-        String rawMessage = message.toString();
-        String[] parts = rawMessage.split(",");
-        int command = Integer.parseInt(parts[0].trim());
-        int data1 = Integer.parseInt(parts[1].trim());
-        int data2 = Integer.parseInt(parts[2].trim());
+    public void handle(int command, int data1, int data2){
         switch(command){
             case ShortMessage.NOTE_ON -> {
                 if(data2 != 0){
@@ -55,6 +49,15 @@ public class KeyboardInterface implements MqttCallback {
                 }
             }
         }
+    }
+
+    @Override
+    public void messageArrived(String topic, MqttMessage message){
+        String rawMessage = message.toString();
+        String[] parts = rawMessage.split(",");
+        handle(Integer.parseInt(parts[0].trim()),
+                Integer.parseInt(parts[1].trim()),
+                Integer.parseInt(parts[2].trim()));
     }
 
     @Override

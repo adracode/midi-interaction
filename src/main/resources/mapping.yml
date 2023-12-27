@@ -47,7 +47,7 @@ keyboard:
       - 4/80: B
       - 4/144: G
       - 4/528: H
-      - 4/576: Z
+      - 4/192: Z
       - 4/640: W
       - 4/84: COLON
       - 4/1: NUMPAD0
@@ -76,7 +76,7 @@ keyboard:
       - 5/192: J
       - 5/144: X
       - 5/132: Y
-      - 5/68: K
+      - 5/80: K
       - 5/20: COMMA
       - 5/704: SEMICOLON
       - 5/8: DEAD_CIRCUMFLEX

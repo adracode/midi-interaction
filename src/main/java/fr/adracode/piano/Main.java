@@ -70,11 +70,8 @@ public class Main {
         options.addOption(Option.builder()
                 .longOpt("simulate-keyboard")
                 .desc("simulate keyboard press")
-                .build());
-
-        options.addOption(Option.builder()
-                .longOpt("mapping")
-                .desc("mapping for keyboard simulation")
+                .hasArg(true)
+                .type(String.class)
                 .build());
 
         CommandLineParser parser = new DefaultParser();
@@ -129,20 +126,43 @@ public class Main {
             });
             reader.run();
         } else if(cmd.hasOption("simulate-keyboard")){
-            MqttSubscriber subscriber = new MqttSubscriber(
-                    cmd.getOptionValue("hostname"),
-                    ((Number)cmd.getParsedOptionValue("port")).intValue(),
-                    "piano/keyboard",
-                    new KeyboardInterface("mapping.yml", new WindowsKeyboard())
-            );
-            Signal.handle(new Signal("INT"), signal -> {
-                try {
-                    subscriber.close();
-                } catch(IOException e){
-                    throw new RuntimeException(e);
+
+            KeyboardInterface keyboardInterface = new KeyboardInterface(cmd.getOptionValue("simulate-keyboard"), new WindowsKeyboard());
+            if(cmd.hasOption("host") && cmd.hasOption("port")){
+                MqttSubscriber subscriber = new MqttSubscriber(
+                        cmd.getOptionValue("hostname"),
+                        ((Number)cmd.getParsedOptionValue("port")).intValue(),
+                        "piano/keyboard", keyboardInterface
+                );
+                Signal.handle(new Signal("INT"), signal -> {
+                    try {
+                        subscriber.close();
+                    } catch(IOException e){
+                        throw new RuntimeException(e);
+                    }
+                });
+
+            } else {
+
+                try(MidiReader reader = new MidiReader(deviceHandler, ((midiMessage, timeStamp) -> {
+                    if(midiMessage instanceof ShortMessage shortMessage){
+                        if(shortMessage.getCommand() == 240){
+                            return;
+                        }
+                        keyboardInterface.handle(shortMessage.getCommand(), shortMessage.getData1(), shortMessage.getData2());
+                    }
+                }))) {
+                    Signal.handle(new Signal("INT"), signal -> reader.close());
+                    reader.run();
+                    while(true){
+                        try {
+                            Thread.sleep(1000);
+                        } catch(InterruptedException e){
+                            break;
+                        }
+                    }
                 }
-            });
+            }
         }
     }
-
 }
