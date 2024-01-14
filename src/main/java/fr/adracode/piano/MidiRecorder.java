@@ -11,13 +11,11 @@ public class MidiRecorder {
     public MidiRecorder(DeviceHandler deviceHandler){
         this.deviceHandler = deviceHandler;
     }
-
-    public void record(File output){
+    
+    public void record(MidiDevice device, File output){
         try {
-            MidiDevice device = deviceHandler.getMidiDeviceInterfaces().get("in").get(0);
             Sequencer sequencer = MidiSystem.getSequencer();
 
-            device.open();
             sequencer.open();
 
             device.getTransmitter().setReceiver(sequencer.getReceiver());
@@ -39,7 +37,6 @@ public class MidiRecorder {
             MidiSystem.write(seq, 0, output);
             System.out.println("Enregistrement terminé.");
 
-            device.close();
             sequencer.close();
         } catch(MidiUnavailableException | IOException | InvalidMidiDataException e){
             e.printStackTrace();

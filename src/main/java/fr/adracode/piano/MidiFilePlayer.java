@@ -7,22 +7,13 @@ import fr.adracode.piano.playlist.PlaylistBuilder;
 import javax.sound.midi.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
 
 public class MidiFilePlayer {
-
-    private final DeviceHandler deviceHandler;
-
+    
     private boolean reRun = false;
     private boolean stop = false;
     private Sequencer sequencer;
-    private List<MidiDevice> devices = new ArrayList<>();
     private Playlist playlist;
-
-    public MidiFilePlayer(DeviceHandler deviceHandler){
-        this.deviceHandler = deviceHandler;
-    }
 
     public void reRun(){
         this.reRun = true;
@@ -38,36 +29,27 @@ public class MidiFilePlayer {
         }
         sequencer.stop();
         sequencer.close();
-        for(MidiDevice device : devices){
-            device.close();
-        }
     }
-
-    public void readMidiFile(String[] files, boolean replay, long start, float tempoFactor){
+    
+    public void readMidiFile(MidiDevice device, String[] files, boolean replay, long start, float tempoFactor){
         this.playlist = new PlaylistBuilder()
                 .filenames(files)
                 .loop(replay)
                 .build();
 
         try {
-            Map<String, List<MidiDevice>> midiInterface = deviceHandler.getMidiDeviceInterfaces();
-            devices.addAll(midiInterface.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
-            MidiDevice out = midiInterface.get("out").get(0);
-            out.open();
-
-            //sendMidiEventsFromFile(out.getReceiver(), "setSnow.mid");
+            //sendMidiEventsFromFile(device.getReceiver(), "setSnow.mid");
 
             sequencer = MidiSystem.getSequencer(false);
             sequencer.open();
             sequencer.getTransmitter().setReceiver(new Receiver() {
                 public void send(MidiMessage message, long timeStamp){
                     try {
-                        out.getReceiver().send(message, timeStamp);
-                        if(message instanceof ShortMessage){
-                            ShortMessage secondVoice = (ShortMessage)message;
+                        device.getReceiver().send(message, timeStamp);
+                        if(message instanceof ShortMessage secondVoice){
                             if(isMidiNoteOnOffMessage(secondVoice)){
                                 secondVoice.setMessage(secondVoice.getCommand(), secondVoice.getChannel() + 1, secondVoice.getData1(), secondVoice.getData2());
-                                out.getReceiver().send(secondVoice, timeStamp);
+                                device.getReceiver().send(secondVoice, timeStamp);
                             }
                         }
                     } catch(MidiUnavailableException | InvalidMidiDataException e){

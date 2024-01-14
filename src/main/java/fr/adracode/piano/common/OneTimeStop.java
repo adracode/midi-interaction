@@ -64,7 +64,7 @@ public class OneTimeStop implements AutoCloseable {
     }
     
     @Override
-    public void close() throws Exception{
+    public void close() throws IOException{
         thread.interrupt();
         reader.close();
     }
