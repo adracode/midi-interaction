@@ -39,10 +39,8 @@ public class ToggleManager extends Mapping<ToggleKey> implements HandleKey {
         }).orElse(false);
 
         togglesState.forEach((toggleKey, state) -> {
-            //Trigger during held down -> has accomplished his duty, can't be once anymore
-            if(state.isOnceCandidate()){
-                state.setBeenUsed(true);
-            }
+            //Trigger during held down -> has accomplished his duty
+            state.setBeenUsed(true);
             if(state.isOnce()){
                 if(activeToggles.contains(toggleKey)){
                     disable(toggleKey);
